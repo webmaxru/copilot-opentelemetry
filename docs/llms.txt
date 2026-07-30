@@ -7,6 +7,8 @@ This is a hands-on observability experiment. VS Code Copilot Chat and the Copilo
 ## Pages
 
 - [Project landing page](https://copilot-opentelemetry.isainative.dev/): Overview of the surfaces, the four backends, what you can monitor, data privacy, and the quick start.
+- [Talk: "Copilot, Traced"](https://copilot-opentelemetry.isainative.dev/presentation/slides.html): A 25-minute developer presentation — span anatomy of a Copilot turn, prompt-cache hit rate, wiring up each of the four backends, and the privacy fine print. Runs in the browser.
+- [Interactive figures](https://copilot-opentelemetry.isainative.dev/presentation/interactive/): The four live figures from the talk as standalone pages — span explorer, pipeline builder, prompt-cache timeline, and cache economics.
 
 ## Source and docs
 

@@ -6,6 +6,7 @@ tempo-data/
 # Node / build
 node_modules/
 docs/analytics.js
+docs/presentation/
 
 # Local-only source drafts (articles)
 .source-docs/

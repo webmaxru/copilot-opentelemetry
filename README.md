@@ -14,6 +14,11 @@ so the same queries work for both surfaces and any OTel-compatible backend.
 
 ![Copilot Prompt Cache Dashboard](docs/dashboard.png)
 
+**Prefer the talk?** [***Copilot, Traced***](https://copilot-opentelemetry.isainative.dev/presentation/slides.html) is a
+25-minute walkthrough of everything below, with four interactive figures you can click through in the
+browser. Slides, speaker script and standalone [figures](https://copilot-opentelemetry.isainative.dev/presentation/interactive/)
+live in [`presentation/`](presentation/).
+
 ---
 
 ## The two axes: surfaces × backends
