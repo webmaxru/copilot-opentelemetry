@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Figure — Copilot, Traced</title>
+<meta name="description" content="A single interactive figure from the talk “Copilot, Traced”, full screen — for live demoing." />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0a0e1a;--line:rgba(255,255,255,.09);--ink:#eef3fb;--muted:#94a1b6;--faint:#5f6b7f;
+    --hit:#73bf69;--miss:#ff9830;--otel:#f97316;
+    --disp:"Sora",system-ui,sans-serif;--body:"Karla",system-ui,sans-serif;
+    --mono:"DM Mono",ui-monospace,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--body);
+    background-image:
+      radial-gradient(900px 460px at 96% -14%, rgba(249,115,22,.10), transparent 60%),
+      radial-gradient(760px 480px at -10% 6%, rgba(76,141,255,.08), transparent 55%);
+    display:flex;flex-direction:column;padding:22px 26px 20px;gap:16px;
+  }
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;flex:0 0 auto}
+  h1{font-family:var(--disp);font-size:24px;font-weight:600;letter-spacing:-.015em}
+  .sub{font-family:var(--mono);font-size:12px;color:var(--faint)}
+  nav{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}
+  nav a{
+    font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:8px;text-decoration:none;
+    border:1px solid var(--line);color:var(--muted)
+  }
+  nav a:hover{border-color:rgba(249,115,22,.5);color:var(--otel)}
+  nav a[aria-current="page"]{background:rgba(249,115,22,.13);border-color:rgba(249,115,22,.45);color:var(--otel)}
+  main{
+    flex:1;min-height:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:linear-gradient(180deg,rgba(15,22,38,.9),rgba(17,26,44,.9))
+  }
+  footer{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="ttl">—</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <nav id="nav"></nav>
+  </header>
+  <main id="host"></main>
+  <footer>
+    Interactive figure from <a href="../slides.html">“Copilot, Traced”</a> ·
+    <a href="index.html">all four figures</a> ·
+    <a href="https://github.com/webmaxru/copilot-opentelemetry">github.com/webmaxru/copilot-opentelemetry</a>
+  </footer>
+
+<script src="../assets/js/figures.js"></script>
+<script>
+(function () {
+  var FIGS = {
+    trace:     ['Anatomy of one turn', 'invoke_agent → chat → execute_tool · click any span'],
+    timeline:  ['Why the cache missed', '26 turns · flip a cause and watch the hit rate'],
+    pipeline:  ['Build your pipeline', 'surface × backend → generated config'],
+    economics: ['What a cache miss costs', 'calibrated against a real nano_aiu span']
+  };
+
+  function current() {
+    var m = /[?&]f=([a-z]+)/.exec(location.search);
+    var k = m && m[1];
+    return FIGS[k] ? k : 'trace';
+  }
+
+  var key = current();
+  document.getElementById('nav').innerHTML = Object.keys(FIGS).map(function (k) {
+    return '<a href="?f=' + k + '"' + (k === key ? ' aria-current="page"' : '') + '>' + k + '</a>';
+  }).join('');
+  document.getElementById('ttl').textContent = FIGS[key][0];
+  document.getElementById('sub').textContent = FIGS[key][1];
+  document.title = FIGS[key][0] + ' — Copilot, Traced';
+
+  try {
+    window.CopilotFigures.mount(key, document.getElementById('host'));
+  } catch (e) {
+    document.getElementById('host').innerHTML =
+      '<div style="display:grid;place-items:center;height:100%;font-family:var(--mono);' +
+      'font-size:13px;color:var(--miss)">could not mount “' + key + '”</div>';
+    console.error(e);
+  }
+})();
+</script>
+</body>
+</html>

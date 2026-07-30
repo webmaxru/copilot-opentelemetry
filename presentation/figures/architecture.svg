@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 520" width="1120" height="520" role="img"
+     aria-label="Architecture: VS Code and the Copilot CLI export OTLP to one of four backends — local Tempo, Azure with a local collector, an Azure Container Apps collector, or Grafana Cloud.">
+  <title>Two surfaces, four backends</title>
+  <desc>VS Code Copilot Chat and the GitHub Copilot CLI both speak OTLP. The same wire feeds four interchangeable
+        backends: A local Docker Tempo plus Grafana, B a local collector fanning out to Tempo and Application
+        Insights, C a scale-to-zero collector on Azure Container Apps, D Grafana Cloud directly.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;fill:#5f6b7f}
+      .ttl{font-size:15px;font-weight:600;fill:#eef3fb}
+      .sub{font-size:11px;fill:#5f6b7f}
+      .tag{font-size:13px;font-weight:700}
+      .wire{stroke:#ffffff;stroke-opacity:.16;stroke-width:1.5;fill:none}
+    </style>
+    <linearGradient id="p" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f1626"/><stop offset="1" stop-color="#111a2c"/>
+    </linearGradient>
+    <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#ffffff" fill-opacity=".28"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="520" fill="#0a0e1a"/>
+
+  <!-- surfaces -->
+  <text class="m lbl" x="40" y="34">emits opentelemetry</text>
+  <g transform="translate(40,50)">
+    <rect width="228" height="74" rx="12" fill="url(#p)" stroke="#4c8dff" stroke-opacity=".45"/>
+    <text class="d ttl" x="18" y="30" fill="#4c8dff">VS Code Copilot Chat</text>
+    <text class="m sub" x="18" y="52">service.name = copilot-chat</text>
+  </g>
+  <g transform="translate(40,140)">
+    <rect width="228" height="74" rx="12" fill="url(#p)" stroke="#a06bff" stroke-opacity=".45"/>
+    <text class="d ttl" x="18" y="30" fill="#a06bff">GitHub Copilot CLI</text>
+    <text class="m sub" x="18" y="52">service.name = github-copilot</text>
+  </g>
+  <g transform="translate(40,230)">
+    <rect width="228" height="74" rx="12" fill="url(#p)" stroke="#ffffff" stroke-opacity=".12"/>
+    <text class="d ttl" x="18" y="30">Copilot SDK · app · JetBrains</text>
+    <text class="m sub" x="18" y="52">same wire, same attributes</text>
+  </g>
+
+  <!-- OTLP junction -->
+  <path class="wire" d="M268 87 H 330 M268 177 H 330 M268 267 H 330"/>
+  <path class="wire" d="M330 87 V 267"/>
+  <path class="wire" d="M330 177 H 392" marker-end="url(#ar)"/>
+
+  <!-- what travels on that wire -->
+  <g transform="translate(40,330)">
+    <rect width="228" height="76" rx="11" fill="#f97316" fill-opacity=".05" stroke="#f97316" stroke-opacity=".24"/>
+    <text class="m lbl" x="18" y="26" fill="#f97316">one wire</text>
+    <text class="m" x="18" y="48" font-size="12" fill="#eef3fb">OTLP/HTTP :4318</text>
+    <text class="m sub" x="18" y="66">gen_ai.* semantic conventions</text>
+  </g>
+
+  <!-- backend column -->
+  <text class="m lbl" x="410" y="34">pick one backend — the dashboard does not care</text>
+
+  <g transform="translate(410,50)">
+    <rect width="670" height="86" rx="12" fill="url(#p)" stroke="#ffffff" stroke-opacity=".1"/>
+    <circle cx="30" cy="43" r="15" fill="#73bf69" fill-opacity=".16"/>
+    <text class="m tag" x="30" y="48" fill="#73bf69" text-anchor="middle">A</text>
+    <text class="d ttl" x="60" y="34">Local — Docker</text>
+    <text class="m sub" x="60" y="56">Grafana Tempo + Grafana :3001 · TraceQL · offline, free, private</text>
+    <text class="m sub" x="640" y="34" text-anchor="end" fill="#73bf69">free</text>
+  </g>
+
+  <g transform="translate(410,148)">
+    <rect width="670" height="86" rx="12" fill="url(#p)" stroke="#f97316" stroke-opacity=".38"/>
+    <circle cx="30" cy="43" r="15" fill="#f97316" fill-opacity=".16"/>
+    <text class="m tag" x="30" y="48" fill="#f97316" text-anchor="middle">B</text>
+    <text class="d ttl" x="60" y="34">Azure — local collector</text>
+    <text class="m sub" x="60" y="56">Collector fans out → Tempo <tspan fill="#94a1b6">and</tspan> Application Insights · TraceQL + KQL</text>
+    <text class="m sub" x="640" y="34" text-anchor="end">metered</text>
+  </g>
+
+  <g transform="translate(410,246)">
+    <rect width="670" height="86" rx="12" fill="url(#p)" stroke="#f97316" stroke-opacity=".38"/>
+    <circle cx="30" cy="43" r="15" fill="#f97316" fill-opacity=".16"/>
+    <text class="m tag" x="30" y="48" fill="#f97316" text-anchor="middle">C</text>
+    <text class="d ttl" x="60" y="34">Azure Container Apps collector</text>
+    <text class="m sub" x="60" y="56">Public bearer-auth endpoint, scale-to-zero → App Insights · fleet-ready</text>
+    <text class="m sub" x="640" y="34" text-anchor="end">scale-to-zero</text>
+  </g>
+
+  <g transform="translate(410,344)">
+    <rect width="670" height="86" rx="12" fill="url(#p)" stroke="#ffffff" stroke-opacity=".1"/>
+    <circle cx="30" cy="43" r="15" fill="#a06bff" fill-opacity=".16"/>
+    <text class="m tag" x="30" y="48" fill="#a06bff" text-anchor="middle">D</text>
+    <text class="d ttl" x="60" y="34">Grafana Cloud</text>
+    <text class="m sub" x="60" y="56">Straight to managed Tempo · nothing to run · no collector, so no scrubbing</text>
+    <text class="m sub" x="640" y="34" text-anchor="end" fill="#73bf69">free tier</text>
+  </g>
+
+  <path class="wire" d="M392 177 V 93 H 404 M392 177 H 404 M392 177 V 289 H 404 M392 177 V 387 H 404"/>
+
+  <!-- footer -->
+  <g transform="translate(40,446)">
+    <rect width="1040" height="60" rx="10" fill="#ffffff" fill-opacity=".025" stroke="#ffffff" stroke-opacity=".07"/>
+    <text class="m" x="20" y="26" font-size="12.5" fill="#94a1b6">
+      A collector in the path (B, C) buys you three things:
+      <tspan fill="#eef3fb">redaction</tspan> ·
+      <tspan fill="#eef3fb">fan-out to more than one backend</tspan> ·
+      <tspan fill="#eef3fb">batching and retry</tspan>.
+    </text>
+    <text class="m" x="20" y="46" font-size="12.5" fill="#5f6b7f">Going direct (A, D) buys you none of them — which is exactly why D cannot scrub anything.</text>
+  </g>
+</svg>

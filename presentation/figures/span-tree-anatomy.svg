@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 520" width="1120" height="520" role="img"
+     aria-label="Anatomy of one Copilot turn: an invoke_agent span containing chat and execute_tool child spans, with GenAI attributes.">
+  <title>Anatomy of one Copilot turn</title>
+  <desc>A trace tree. The root invoke_agent span carries cost and agent attributes. Child chat spans carry token
+        and prompt-cache attributes. execute_tool spans carry tool names.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;fill:#5f6b7f}
+      .k{font-size:12.5px;fill:#94a1b6}
+      .v{font-size:12.5px;fill:#eef3fb}
+      .nm{font-size:15px;fill:#eef3fb}
+      .sm{font-size:11.5px;fill:#5f6b7f}
+    </style>
+    <linearGradient id="pnl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f1626"/><stop offset="1" stop-color="#111a2c"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1120" height="520" fill="#0a0e1a"/>
+
+  <text class="m lbl" x="40" y="38">a single copilot turn · one trace</text>
+
+  <!-- root span -->
+  <g transform="translate(40,58)">
+    <rect width="1040" height="76" rx="13" fill="url(#pnl)" stroke="#f97316" stroke-opacity=".45"/>
+    <rect x="0" y="0" width="1040" height="76" rx="13" fill="#f97316" fill-opacity=".05"/>
+    <text class="m nm" x="22" y="31" fill="#f97316">invoke_agent</text>
+    <text class="m sm" x="168" y="31">the turn · root span</text>
+    <text class="m k" x="22" y="56">github.copilot.nano_aiu <tspan fill="#eef3fb">20546625000</tspan>
+      <tspan class="sm">  ÷ 1e9 = 20.5 AI credits</tspan></text>
+    <text class="m k" x="560" y="56">gen_ai.agent.id <tspan fill="#a06bff">copilotcli</tspan></text>
+    <text class="m k" x="800" y="56">turn_count <tspan fill="#eef3fb">7</tspan></text>
+    <text class="m sm" x="960" y="31" text-anchor="end">12.4 s</text>
+  </g>
+
+  <!-- connector rail -->
+  <path d="M64 142 V 472" stroke="#ffffff" stroke-opacity=".12" stroke-width="1"/>
+
+  <!-- child: chat (miss) -->
+  <g transform="translate(96,150)">
+    <path d="M-32 34 H -10" stroke="#ffffff" stroke-opacity=".12"/>
+    <rect width="984" height="72" rx="12" fill="url(#pnl)" stroke="#ff9830" stroke-opacity=".38"/>
+    <text class="m nm" x="20" y="29">chat</text>
+    <text class="m sm" x="72" y="29">gpt-5.6</text>
+    <rect x="150" y="17" width="86" height="18" rx="5" fill="#ff9830" fill-opacity=".16"/>
+    <text class="m" x="163" y="30" font-size="10.5" fill="#ff9830" letter-spacing=".1em">CACHE MISS</text>
+    <text class="m k" x="20" y="54">gen_ai.usage.cache_creation.input_tokens
+      <tspan fill="#ff9830">21,504</tspan></text>
+    <text class="m k" x="470" y="54">cache_read <tspan fill="#eef3fb">0</tspan></text>
+    <text class="m k" x="620" y="54">output_tokens <tspan fill="#eef3fb">318</tspan></text>
+    <text class="m k" x="800" y="54">ttft <tspan fill="#eef3fb">0.94 s</tspan></text>
+    <text class="m sm" x="964" y="29" text-anchor="end">3.9 s</text>
+  </g>
+
+  <!-- child: tools -->
+  <g transform="translate(96,234)">
+    <path d="M-32 26 H -10" stroke="#ffffff" stroke-opacity=".12"/>
+    <rect width="984" height="52" rx="12" fill="url(#pnl)" stroke="#ffffff" stroke-opacity=".09"/>
+    <text class="m nm" x="20" y="31">execute_tool</text>
+    <text class="m k" x="150" y="31">gen_ai.tool.name <tspan fill="#eef3fb">read_file</tspan></text>
+    <text class="m k" x="470" y="31">gen_ai.tool.type <tspan fill="#eef3fb">function</tspan></text>
+    <text class="m sm" x="964" y="31" text-anchor="end">0.4 s</text>
+  </g>
+  <g transform="translate(96,296)">
+    <path d="M-32 26 H -10" stroke="#ffffff" stroke-opacity=".12"/>
+    <rect width="984" height="52" rx="12" fill="url(#pnl)" stroke="#ffffff" stroke-opacity=".09"/>
+    <text class="m nm" x="20" y="31">execute_tool</text>
+    <text class="m k" x="150" y="31">gen_ai.tool.name <tspan fill="#eef3fb">grep_search</tspan></text>
+    <text class="m k" x="470" y="31">gen_ai.tool.type <tspan fill="#eef3fb">function</tspan></text>
+    <text class="m sm" x="964" y="31" text-anchor="end">1.1 s</text>
+  </g>
+
+  <!-- child: chat (hit) -->
+  <g transform="translate(96,358)">
+    <path d="M-32 34 H -10" stroke="#ffffff" stroke-opacity=".12"/>
+    <rect width="984" height="72" rx="12" fill="url(#pnl)" stroke="#73bf69" stroke-opacity=".4"/>
+    <text class="m nm" x="20" y="29">chat</text>
+    <text class="m sm" x="72" y="29">gpt-5.6</text>
+    <rect x="150" y="17" width="76" height="18" rx="5" fill="#73bf69" fill-opacity=".16"/>
+    <text class="m" x="162" y="30" font-size="10.5" fill="#73bf69" letter-spacing=".1em">CACHE HIT</text>
+    <text class="m k" x="20" y="54">gen_ai.usage.cache_read.input_tokens
+      <tspan fill="#73bf69">21,504</tspan></text>
+    <text class="m k" x="470" y="54">cache_creation <tspan fill="#eef3fb">1,606</tspan></text>
+    <text class="m k" x="660" y="54">output_tokens <tspan fill="#eef3fb">640</tspan></text>
+    <text class="m k" x="830" y="54">ttft <tspan fill="#73bf69">0.31 s</tspan></text>
+    <text class="m sm" x="964" y="29" text-anchor="end">2.6 s</text>
+  </g>
+
+  <!-- resource footer -->
+  <g transform="translate(40,452)">
+    <text class="m lbl" x="0" y="12">on every span</text>
+    <text class="m k" x="150" y="13">resource.service.name
+      <tspan fill="#4c8dff">copilot-chat</tspan> <tspan class="sm">(VS Code)</tspan>
+      <tspan fill="#5f6b7f">  ·  </tspan>
+      <tspan fill="#a06bff">github-copilot</tspan> <tspan class="sm">(CLI runtime)</tspan></text>
+  </g>
+</svg>

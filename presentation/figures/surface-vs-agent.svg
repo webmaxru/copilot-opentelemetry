@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 500" width="1120" height="500" role="img"
+     aria-label="Surface versus agent: resource.service.name tells you which runtime emitted a span, gen_ai.agent tells you what was running inside it.">
+  <title>Two axes: surface × agent</title>
+  <desc>A grid. Columns are surfaces identified by resource.service.name. Rows are agents identified by
+        gen_ai.agent.name or gen_ai.agent.id. A Copilot CLI session started inside VS Code lands in two cells,
+        which is why filtering on service.name alone over-counts.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;fill:#5f6b7f}
+      .hd{font-size:13.5px;fill:#eef3fb}
+      .ax{font-size:11.5px;fill:#5f6b7f}
+      .cell{font-size:12px;fill:#94a1b6}
+    </style>
+  </defs>
+  <rect width="1120" height="500" fill="#0a0e1a"/>
+
+  <text class="m lbl" x="40" y="36">service.name is not a synonym for “surface you are sitting in”</text>
+
+  <!-- column headers -->
+  <text class="m ax" x="330" y="76">SURFACE  ·  resource.service.name</text>
+  <g transform="translate(330,86)">
+    <rect width="240" height="42" rx="9" fill="#4c8dff" fill-opacity=".1" stroke="#4c8dff" stroke-opacity=".4"/>
+    <text class="m hd" x="20" y="27" fill="#4c8dff">copilot-chat</text>
+  </g>
+  <g transform="translate(586,86)">
+    <rect width="240" height="42" rx="9" fill="#a06bff" fill-opacity=".1" stroke="#a06bff" stroke-opacity=".4"/>
+    <text class="m hd" x="20" y="27" fill="#a06bff">github-copilot</text>
+  </g>
+  <g transform="translate(842,86)">
+    <rect width="238" height="42" rx="9" fill="#ffffff" fill-opacity=".03" stroke="#ffffff" stroke-opacity=".12"/>
+    <text class="m hd" x="20" y="27">claude-code</text>
+  </g>
+
+  <!-- row headers -->
+  <text class="m ax" x="40" y="76">AGENT · gen_ai.agent.*</text>
+
+  <g transform="translate(40,144)">
+    <rect width="272" height="62" rx="9" fill="#ffffff" fill-opacity=".025" stroke="#ffffff" stroke-opacity=".09"/>
+    <text class="m hd" x="18" y="27" font-size="12.5">GitHub Copilot Chat</text>
+    <text class="m ax" x="18" y="47">foreground chat in the editor</text>
+  </g>
+  <g transform="translate(40,222)">
+    <rect width="272" height="62" rx="9" fill="#ffffff" fill-opacity=".025" stroke="#ffffff" stroke-opacity=".09"/>
+    <text class="m hd" x="18" y="27" font-size="12.5">copilotcli</text>
+    <text class="m ax" x="18" y="47">the CLI runtime / agent host</text>
+  </g>
+  <g transform="translate(40,300)">
+    <rect width="272" height="62" rx="9" fill="#ffffff" fill-opacity=".025" stroke="#ffffff" stroke-opacity=".09"/>
+    <text class="m hd" x="18" y="27" font-size="12.5">claude</text>
+    <text class="m ax" x="18" y="47">Claude Code subprocess</text>
+  </g>
+
+  <!-- grid cells -->
+  <g transform="translate(330,144)">
+    <rect width="240" height="62" rx="9" fill="#4c8dff" fill-opacity=".07" stroke="#4c8dff" stroke-opacity=".28"/>
+    <text class="m cell" x="18" y="28">chat you type in the</text>
+    <text class="m cell" x="18" y="46">Copilot Chat panel</text>
+  </g>
+  <g transform="translate(330,222)">
+    <rect width="240" height="62" rx="9" fill="#ff9830" fill-opacity=".08" stroke="#ff9830" stroke-opacity=".38"/>
+    <text class="m cell" x="18" y="28" fill="#ff9830">CLI launched from</text>
+    <text class="m cell" x="18" y="46" fill="#ff9830">inside VS Code *</text>
+  </g>
+  <g transform="translate(586,222)">
+    <rect width="240" height="62" rx="9" fill="#ff9830" fill-opacity=".08" stroke="#ff9830" stroke-opacity=".38"/>
+    <text class="m cell" x="18" y="28" fill="#ff9830">…the same session,</text>
+    <text class="m cell" x="18" y="46" fill="#ff9830">native spans *</text>
+  </g>
+  <g transform="translate(586,300)">
+    <rect width="240" height="62" rx="9" fill="#ffffff" fill-opacity=".03" stroke="#ffffff" stroke-opacity=".1"/>
+    <text class="m cell" x="18" y="28">terminal `copilot`</text>
+    <text class="m cell" x="18" y="46">and the desktop app</text>
+  </g>
+  <g transform="translate(842,300)">
+    <rect width="238" height="62" rx="9" fill="#ffffff" fill-opacity=".03" stroke="#ffffff" stroke-opacity=".1"/>
+    <text class="m cell" x="18" y="28">Claude via Copilot,</text>
+    <text class="m cell" x="18" y="46">telemetry forwarded</text>
+  </g>
+
+  <!-- the gotcha -->
+  <path d="M570 253 H 586" stroke="#ff9830" stroke-width="2"/>
+  <g transform="translate(40,398)">
+    <rect width="1040" height="82" rx="11" fill="#ff9830" fill-opacity=".06" stroke="#ff9830" stroke-opacity=".28"/>
+    <text class="m" x="22" y="27" font-size="11.5" fill="#ff9830" letter-spacing=".16em">* THE OVER-COUNT</text>
+    <text class="m" x="22" y="50" font-size="12.5" fill="#94a1b6">
+      One CLI session started inside VS Code emits the extension wrapper as
+      <tspan fill="#4c8dff">copilot-chat</tspan>
+    </text>
+    <text class="m" x="22" y="69" font-size="12.5" fill="#94a1b6">
+      and its native spans as <tspan fill="#a06bff">github-copilot</tspan>.
+      <tspan fill="#eef3fb">Filter on service.name alone and you count it twice.</tspan>
+    </text>
+  </g>
+</svg>
