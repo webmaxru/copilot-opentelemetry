@@ -2,8 +2,8 @@
 
 A hands-on experiment and reference implementation for wiring **OpenTelemetry** through the GitHub
 Copilot surfaces that **actually emit customer-collectable OTel today** — **VS Code Copilot Chat** and
-the **GitHub Copilot CLI** — and visualizing the result in Grafana. (Other surfaces don't expose it
-yet; the coverage table below is the honest map.) It's built to be the working foundation for a
+the **GitHub Copilot CLI** — and visualizing the result in Grafana. (**JetBrains** joined the list in
+July 2026; the coverage table below is the honest map.) It's built to be the working foundation for a
 longread article: each backend is a self-contained, reproducible setup, and the dashboards let you
 compare VS Code vs the CLI (or look at both together).
 
@@ -23,26 +23,46 @@ This repo is organized around two independent choices.
 ### 1. Surfaces — *what* emits OpenTelemetry
 
 Only some Copilot surfaces expose OTel you can export to your own backend today. The honest map
-(mid-2026):
+(**July 2026**):
 
 | Surface | Export OTel to your backend? | `resource.service.name` | How |
 |---------|------------------------------|-------------------------|-----|
-| **VS Code Copilot Chat** | ✅ Yes | `copilot-chat` | `github.copilot.chat.otel.*` settings or `OTEL_*` env vars |
-| **GitHub Copilot CLI** | ✅ Yes | `github-copilot` | `OTEL_*` env vars (`COPILOT_OTEL_ENABLED=true`) |
+| **VS Code Copilot Chat** | ✅ Yes | `copilot-chat` | `github.copilot.chat.otel.*` settings, `OTEL_*` env vars, or [managed settings](#rolling-this-out-to-a-team-enterprise-managed-settings) |
+| **GitHub Copilot CLI** | ✅ Yes | `github-copilot` | `OTEL_*` env vars (`COPILOT_OTEL_ENABLED=true`) or managed settings |
 | **Copilot SDK** (Node/Py/Go/.NET/Java/Rust) | ✅ Yes — for apps you build | configurable | `TelemetryConfig` (drives the CLI process) |
+| **JetBrains** plugins | ✅ **Yes — new in July 2026** | *not yet verified* | **Settings → Tools → GitHub Copilot → Chat** → OpenTelemetry export ([changelog](https://github.blog/changelog/2026-07-27-github-copilot-for-jetbrains-adds-improvved-opentelemetry-configuration-and-model-management/)) |
+| **Copilot app** (desktop) | ✅ Yes | `github-copilot` | Its own client (own policy since [2026-07-27](https://github.blog/changelog/2026-07-27-manage-github-copilot-app-access-with-a-dedicated-policy/)) but built on the CLI runtime — same `OTEL_*` env vars, reports as `github-copilot` (verified) |
+| **Claude agent / Claude Code** (via Copilot) | ✅ Yes | `copilot-chat`, `claude-code` | Extension-emitted spans; `claude-code` appears when `CLAUDE_CODE_ENABLE_TELEMETRY` is forwarded |
 | **Visual Studio** extension | ❌ Not today | — | — |
-| **JetBrains** plugins | ❌ Not today | — | Rider's own OTel plugin instruments *your app*, not Copilot |
-| **Copilot app** (desktop) | ✅ Yes — via the CLI | `github-copilot` | Frontend to the Copilot CLI: the same `OTEL_*` env vars enable it and it reports as `github-copilot` (verified) |
 | **Cloud coding agent** (opens PRs) | ❌ Not directly | — | server-side; the *client* only emits session counters |
 
-So this repo is scoped to the two OTel identities you can actually collect from — **VS Code (`copilot-chat`)**
-and **the CLI (`github-copilot`)**. The desktop **Copilot app** is a frontend to the CLI, so it emits the
-same telemetry and reports as `github-copilot` too — it rides the `Copilot CLI` selector option rather than
-adding a new one. Both follow the **same GenAI conventions** (identical `gen_ai.*`
-attributes), differing only in `resource.service.name` — which is exactly what the dashboards use as a
-**surface selector** (`All (VS Code + CLI)` / `VS Code` / `Copilot CLI`). Keep `OTEL_SERVICE_NAME`
-**unset** so each surface keeps its distinct default name. When another surface adopts these
-conventions, it slots in: a new `service.name`, a new option in the selector.
+> **JetBrains caveat.** The plugin gained an OTel export panel in the July 2026 release, but GitHub
+> hasn't documented which `service.name` it reports and we have not been able to verify it on a
+> machine with a JetBrains IDE. Rather than guess, the dashboards don't yet ship a JetBrains option —
+> point it at the same collector, run `{ } | count_over_time() by (resource.service.name)` in Tempo,
+> and add whatever name shows up.
+
+**Two axes, not one.** The repo used to treat `resource.service.name` as a synonym for "surface". As of
+the July 2026 docs that's no longer exact, so the dashboards now slice on **two** attributes:
+
+| Axis | Attribute | Values |
+|------|-----------|--------|
+| **Surface** (which runtime emitted it) | `resource.service.name` | `copilot-chat` (VS Code extension) · `github-copilot` (CLI runtime) · `claude-code` (Claude Code subprocess) |
+| **Agent** (what was running inside it) | `gen_ai.agent.name` (VS Code) / `gen_ai.agent.id` (CLI) | `GitHub Copilot Chat` · `copilotcli` · `claude` · `github.copilot.default` |
+
+The subtlety: a **Copilot CLI session started from inside VS Code** emits the extension wrapper span as
+`copilot-chat` *and* the SDK's native spans as `github-copilot`. So `github-copilot` is **not** "the
+terminal CLI only" — filtering on it alone over-counts. The **Turns by Agent** panel on both dashboards
+separates foreground chat from CLI and Claude sessions.
+
+> **Why there's no *Agent* dropdown.** Only `invoke_agent` spans carry `gen_ai.agent.*`; `chat` and
+> `execute_tool` don't. A board-wide agent filter would therefore silently zero out most panels, so the
+> agent axis is exposed as its own panel rather than as a template variable.
+
+Everything still follows the **same GenAI conventions** (identical `gen_ai.*` attributes), which is why
+one dashboard covers all of it. Keep `OTEL_SERVICE_NAME` **unset** so each surface keeps its distinct
+default name — and note that an admin-set `telemetry.serviceName` in managed settings would collapse
+them all into one name and break the surface selector.
 
 ### 2. Backends — *where* the telemetry goes
 
@@ -120,8 +140,53 @@ Copilot spans (both surfaces) carry these attributes ([GenAI semantic convention
 | `gen_ai.usage.cache_read.input_tokens` | Tokens served **from** cache → **cache HIT** |
 | `gen_ai.usage.cache_creation.input_tokens` | Tokens **written to** cache → **cache MISS** |
 | `gen_ai.request.model` | Model (slice by model) |
-| `gen_ai.operation.name` | `chat`, `invoke_agent`, or `execute_tool` |
-| `resource.service.name` | **The surface** — `copilot-chat` (VS Code) or `github-copilot` (CLI) |
+| `gen_ai.operation.name` | `chat`, `invoke_agent`, `execute_tool`, or `execute_hook` |
+| `resource.service.name` | **The surface** — `copilot-chat` (VS Code), `github-copilot` (CLI runtime), `claude-code` |
+| `gen_ai.agent.name` / `gen_ai.agent.id` | **The agent** — `GitHub Copilot Chat`, `copilotcli`, `claude`, `github.copilot.default` |
+
+### Cost and AI credits (CLI, new)
+
+The CLI runtime now puts spend directly on the span, so you no longer have to infer cost from tokens:
+
+| Attribute | Meaning |
+|-----------|---------|
+| `github.copilot.nano_aiu` | **AI units × 10⁻⁹.** Divide by `1e9` for the "AI Credits" figure the CLI prints |
+| `github.copilot.cost` | Request cost as reported by the service |
+| `github.copilot.server_duration` | Server-side duration (ms), vs. the span's wall-clock duration |
+| `gen_ai.response.time_to_first_chunk` | TTFT in seconds (streaming) |
+| `github.copilot.turn_count` | LLM round-trips in the session |
+
+> ⚠️ **The published docs say `github.copilot.aiu`. The wire says `github.copilot.nano_aiu`.**
+> Verified against Copilot CLI 1.0.76: a run the CLI reported as "AI Credits 20.5" emitted
+> `github.copilot.nano_aiu = 20546625000`. The dashboards use the `nano_aiu` form and divide by `1e9`.
+
+### Span events — why a cache miss happened
+
+Cache hit rate tells you *that* the prefix changed; these events tell you *why*:
+
+| Event | Meaning |
+|-------|---------|
+| `github.copilot.session.truncation` | History was trimmed (`token_limit`, `pre_tokens`, `post_tokens`, `tokens_removed`) |
+| `github.copilot.session.compaction_start` / `_complete` | History was summarised and rewritten |
+| `github.copilot.session.usage_info` | Running context usage (`token_limit`, `current_tokens`, `messages_length`) |
+| `github.copilot.skill.invoked` | A skill was injected into the prompt |
+| `github.copilot.session.shutdown` | End-of-session totals (premium requests, lines added/removed, files modified) |
+
+**Truncation and compaction rewrite the prompt prefix — they are a direct *cause* of the next cache
+miss.** Overlaying them on the hit/miss chart is the most useful correlation in this repo.
+
+### Metrics (not just traces)
+
+Both surfaces also emit **metrics**, which a traces-only pipeline silently drops (this repo's collector
+configs used to do exactly that — now fixed):
+
+`gen_ai.client.operation.duration` · `gen_ai.client.token.usage` ·
+`gen_ai.client.operation.time_to_first_chunk` · `gen_ai.client.operation.time_per_output_chunk` ·
+`gen_ai.invoke_agent.duration` · `gen_ai.invoke_agent.inference_calls` ·
+`gen_ai.invoke_agent.tool_calls` · `github.copilot.agent.turn.count`
+
+Grafana **Tempo stores traces only**, so metrics need a metrics store (Application Insights in options
+B/C, Grafana Cloud in D).
 
 **Cache hit** = `cache_read.input_tokens > 0` · **Cache miss** = `cache_creation.input_tokens > 0` · **No cache** = both 0.
 
@@ -151,14 +216,18 @@ or `OTEL_EXPORTER_OTLP_ENDPOINT` is set. The **endpoint** you point at determine
 }
 ```
 
-**Cloud backends (C, D)** — cloud endpoints need an auth token, which there is **no `settings.json`
-key for**, so use environment variables instead (no settings.json needed) and restart VS Code:
+**Cloud backends (C, D)** — cloud endpoints need an auth token. There is no *user-level*
+`settings.json` key for headers, so an individual developer uses environment variables and restarts VS Code:
 
 ```powershell
 setx OTEL_EXPORTER_OTLP_ENDPOINT "https://<your-cloud-endpoint>"
 setx OTEL_EXPORTER_OTLP_HEADERS  "Authorization=Bearer <token>"   # Grafana Cloud uses "Basic <base64>"
 setx COPILOT_OTEL_ENABLED        "true"
 ```
+
+> **New in July 2026:** administrators *do* have a supported key — `telemetry.headers` in
+> [enterprise managed settings](#rolling-this-out-to-a-team-enterprise-managed-settings). That is now
+> the right way to ship a collector token to a fleet, instead of `setx` on every machine.
 
 ### GitHub Copilot CLI (`github-copilot`)
 
@@ -170,11 +239,34 @@ reads the **same `OTEL_*` environment variables** — so the cloud block above e
   so the two surfaces stay distinct in the dashboards.
 - Content capture is a different flag: `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` (default `false`).
 - For a **local** backend (A/B), point the CLI at the collector: `setx OTEL_EXPORTER_OTLP_ENDPOINT "http://localhost:4318"`.
-- The **desktop GitHub Copilot app** is a frontend to the CLI, so these same vars enable its telemetry too — it reports as `github-copilot` (verified by testing).
+- The **desktop GitHub Copilot app** runs on the CLI runtime, so these same vars enable its telemetry too — it reports as `github-copilot` (verified by testing).
+- ⚠️ **Protocol mismatch gotcha.** The CLI defaults `OTEL_EXPORTER_OTLP_PROTOCOL` to **`http/json`**,
+  while VS Code defaults to **`http/protobuf`**. Most collectors accept both, but some backends
+  (including Grafana Cloud's OTLP gateway) want protobuf — which is why Option D sets it explicitly.
+- Useful extras: `COPILOT_OTEL_FILE_EXPORTER_PATH` (write every signal to a JSON-lines file — the
+  fastest way to see exactly what your version emits, no backend required), `COPILOT_OTEL_EXPORTER_TYPE`,
+  and `OTEL_LOG_LEVEL` for exporter diagnostics.
 
 > **Safety.** Use **User** settings / user env vars, not Workspace. Keep `captureContent` **off** — set
 > to `true` and full prompts, responses, and code land in the traces (fine for debugging your own,
 > risky otherwise). Going direct to the cloud (C, D) means no collector to scrub content.
+>
+> ⚠️ **"Content capture off" does not mean "anonymous."** Verified on the wire with Copilot CLI 1.0.76
+> and content capture **disabled**, these still ship by default:
+>
+> | Attribute | What it reveals |
+> |---|---|
+> | `enduser.pseudo.id` | a stable pseudonymous **user id** — every span is attributable to one person |
+> | `gen_ai.tool.definitions` | your full **tool + MCP server inventory** (names only, but still an inventory) |
+> | `github.copilot.context.skills` | every **skill installed locally**, by name |
+> | `github.copilot.context.custom_agent_names` | your **custom agent** names |
+> | `github.copilot.git.*` / `copilot_chat.repo.*` (VS Code) | repository URL, branch, commit SHA, org |
+>
+> For a backend you own (A, B) that is usually fine and often useful. For a shared or third-party
+> backend (C, D), route through a **collector** and drop them — both
+> [`config/otel-collector.yaml`](config/otel-collector.yaml) (lenient) and
+> [`config/otel-collector-cloud.yaml`](config/otel-collector-cloud.yaml) (strict) ship a working
+> `attributes/scrub` processor you can copy. This is the strongest argument for the collector hop.
 
 > **Enable both surfaces at once (the fleet shape).** Set the four env vars once at the user/machine
 > level and both surfaces report: VS Code as `copilot-chat`, the CLI as `github-copilot`. This is
@@ -278,6 +370,15 @@ az monitor app-insights query --ids $id --analytics-query `
 
 The `azuremonitor` exporter maps Copilot spans into the App Insights **`dependencies`** table with
 `cloud_RoleName` = the surface and all `gen_ai.*` values in `customDimensions`.
+
+Copilot also emits OTLP **metrics**, which land in **`customMetrics`**. Check them too — if this comes
+back empty your collector is missing a `metrics:` pipeline (the one in this repo has had one since the
+July 2026 update; earlier revisions were traces-only and silently dropped every metric):
+
+```powershell
+az monitor app-insights query --ids $id --analytics-query `
+  "customMetrics | where timestamp > ago(1h) | where name startswith 'gen_ai.' or name startswith 'github.copilot.' | summarize count() by name"
+```
 
 ### 5. View the dashboards
 
@@ -402,6 +503,18 @@ Both dashboards have a **Copilot surface** template variable — *All (VS Code +
 / *Copilot CLI (github-copilot)* — that filters every panel on `resource.service.name` (TraceQL) or
 `cloud_RoleName` (KQL). They also expose a **data source** variable so you can upload them into any Grafana.
 
+Both gained three sections in the **July 2026** update:
+
+| Section | What it answers |
+|---------|-----------------|
+| **Cost, AI credits & agents** | What did this actually cost? `github.copilot.nano_aiu` ÷ 1e9 is the *AI Credits* figure the CLI prints, summed over `invoke_agent` spans (one per turn, so no double counting) and split by surface. Plus **Turns by Agent** — the second axis, `gen_ai.agent.id` / `gen_ai.agent.name`. |
+| **Why the cache missed** | Cache **token volume** (read vs created) next to the `github.copilot.session.*` span events. Truncation and compaction rewrite the prompt prefix, so a spike there should be followed by a jump in cache-creation tokens — cause next to effect. |
+| **OTLP metrics** *(KQL only)* | Copilot's OTel **metrics** (`gen_ai.client.token.usage`, `gen_ai.invoke_agent.tool_calls`, …) from `customMetrics`. Tempo stores traces only, so there is no TraceQL equivalent. |
+
+> The AI-credits panels use the Grafana unit `si:nAIU` — an SI *nano* prefix on a custom `AIU` unit, so
+> Grafana rescales `21758500000` to **21.8 AIU** with no transformation. Verified against the figure the
+> CLI printed for the same session.
+
 | File | Backend / data source | Use it for |
 |------|-----------------------|------------|
 | `dashboards/tempo/copilot-otel-tempo.json` | Grafana **Tempo** (TraceQL) | Options **A, B** (local Grafana) and **D** (Grafana Cloud) |
@@ -428,8 +541,8 @@ by the selected surface.
 | `docker-compose.azure.yml` | **Option B** — OTel Collector + Tempo + Grafana |
 | `config/tempo.yaml` | Tempo: OTLP receivers, local storage, TraceQL-metrics generator |
 | `config/grafana/*.yaml` | Grafana provisioning (Tempo data source + dashboards) |
-| `config/otel-collector.yaml` | **Option B** collector: OTLP in → `otlp/tempo` + `azuremonitor` |
-| `config/otel-collector-cloud.yaml` | **Option C** collector: OTLP + bearer auth → `azuremonitor` |
+| `config/otel-collector.yaml` | **Option B** collector: OTLP in (traces + metrics + logs) → `otlp_grpc/tempo` + `azuremonitor`, lenient scrub |
+| `config/otel-collector-cloud.yaml` | **Option C** collector: OTLP + bearer auth → `azuremonitor`, **strict** scrub |
 | `dashboards/tempo/copilot-otel-tempo.json` | Surface-aware **TraceQL** dashboard (A, B, D) |
 | `dashboards/appinsights/copilot-otel-appinsights.json` | Surface-aware **KQL** dashboard (B, C) |
 | `azure/setup-azure.ps1` | Provisions Log Analytics + Application Insights, writes `.env` |
@@ -440,15 +553,106 @@ by the selected surface.
 | `.github/workflows/deploy-pages.yml` | Builds `docs/` (injecting the connection string from a repo variable) and deploys to GitHub Pages |
 | `azure/dashboard.json`, `scripts/report.ps1` | Engagement dashboard template + terminal/Portal report for the site analytics |
 
-## Rolling this out to a team (Intune)
+## Rolling this out to a team (enterprise managed settings)
 
-To guarantee every developer reports telemetry from both surfaces, push the config as **managed
-settings via Microsoft Intune**:
+Until July 2026 the only realistic fleet rollout was "push environment variables with Intune and hope".
+GitHub now ships a supported path: **Copilot managed settings**, with a dedicated `telemetry` block that
+maps onto the VS Code `chat.agentHost.otel.*` policy namespace and is honoured by **VS Code, the Copilot
+CLI, the Copilot app, and the cloud coding agent**.
 
-- **Local collector (B):** push the four `github.copilot.chat.otel.*` settings.
-- **Cloud endpoint (C, D):** push `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and
-  `COPILOT_OTEL_ENABLED=true` as environment variables. This is the most scalable shape — developers
-  run nothing locally, and both surfaces (VS Code + CLI) report automatically.
+### The `telemetry` block
+
+| Key | Purpose |
+|-----|---------|
+| `telemetry.enabled` | force OTel **on** (developers can't turn it off) |
+| `telemetry.endpoint` | the mandated OTLP collector URL |
+| `telemetry.protocol` | `otlp-http` or `otlp-grpc` |
+| `telemetry.captureContent` | content capture on/off |
+| `telemetry.lockCaptureContent` | **prevent developers re-enabling content capture** |
+| `telemetry.serviceName` | override `service.name` — ⚠️ see the warning below |
+| `telemetry.resourceAttributes` | JSON object of extra resource attributes (team, cost centre, …) |
+| `telemetry.headers` | JSON object of OTLP headers — **this is where the collector auth token goes** |
+
+Precedence is **policy → environment variable → user setting → default**, so a managed value always
+wins over a developer's `settings.json`.
+
+> ⚠️ **Don't set `telemetry.serviceName` fleet-wide.** It collapses every surface into a single
+> `service.name`, and the **Copilot surface** selector in both dashboards — which filters on
+> `resource.service.name` / `cloud_RoleName` — stops distinguishing VS Code from the CLI. If you need
+> org tagging, put it in `telemetry.resourceAttributes` instead and leave `serviceName` alone.
+
+> **Header caveat.** Managed `telemetry.headers` are delivered to the **Chat extension exporter only** —
+> never to the agent host. That is deliberate: it keeps tokens out of tool subprocesses. Practically it
+> means a mandated *cloud* endpoint (C, D) gets authenticated traffic from the extension, while agent-host
+> spans need an unauthenticated in-network collector. Pointing the fleet at an internal collector
+> (**Option B/C shape**) side-steps this entirely — which is another argument for the collector hop.
+>
+> The agent host reads its configuration at start-up, so a managed change needs a **VS Code reload**.
+
+### Three delivery channels
+
+| Channel | Where it lives |
+|---|---|
+| **Native MDM** (Intune, Jamf, …) | Windows `HKLM\SOFTWARE\Policies\GitHubCopilot`, macOS `com.github.copilot` |
+| **Server-managed** | `copilot/managed-settings.json` in the org's `.github-private` repository |
+| **File-based** | `%ProgramFiles%\GitHubCopilot\managed-settings.json` · `/Library/Application Support/GitHubCopilot/managed-settings.json` · `/etc/github-copilot/managed-settings.json` |
+
+Precedence between channels is **Native MDM > server-managed > file-based**, and it is
+**winner-takes-all** — the highest-priority source that exists is used *whole*; blocks are not merged.
+File-based settings must be root/administrator-owned, not world-writable, and not symlinks.
+
+Verify what actually applied with **`Developer: Policy Diagnostics`** in the VS Code command palette.
+
+### Ready-to-paste `managed-settings.json`
+
+**Option B — local/in-network collector** (each machine runs the collector, or points at a shared one):
+
+```json
+{
+  "telemetry": {
+    "enabled": true,
+    "endpoint": "http://localhost:4318",
+    "protocol": "otlp-http",
+    "captureContent": false,
+    "lockCaptureContent": true,
+    "resourceAttributes": { "deployment.environment": "dev", "team": "platform" }
+  }
+}
+```
+
+**Option C — Azure Container Apps collector** (bearer-authenticated, scale-to-zero):
+
+```json
+{
+  "telemetry": {
+    "enabled": true,
+    "endpoint": "https://<your-aca-collector>.azurecontainerapps.io",
+    "protocol": "otlp-http",
+    "captureContent": false,
+    "lockCaptureContent": true,
+    "headers": { "Authorization": "Bearer <collector-token>" },
+    "resourceAttributes": { "deployment.environment": "prod" }
+  }
+}
+```
+
+**Option D — Grafana Cloud direct** (no collector; note the protocol, see the gotcha above):
+
+```json
+{
+  "telemetry": {
+    "enabled": true,
+    "endpoint": "https://otlp-gateway-<region>.grafana.net/otlp",
+    "protocol": "otlp-http",
+    "captureContent": false,
+    "lockCaptureContent": true,
+    "headers": { "Authorization": "Basic <base64 instanceID:token>" }
+  }
+}
+```
+
+> With no collector in the path, Option D means **no scrubbing** — the identifiers listed in the safety
+> note above reach Grafana Cloud as-is. If that matters to you, use B or C.
 
 ## Using this repo as an article foundation
 
@@ -458,7 +662,7 @@ Each section maps to a beat in a longread on Copilot observability:
 2. **What** — the surfaces (VS Code, CLI) and the shared GenAI conventions.
 3. **How** — four backends from a laptop (offline) to a fleet-ready cloud endpoint.
 4. **See it** — one surface-aware dashboard, TraceQL and KQL variants, side-by-side VS Code vs CLI.
-5. **Scale it** — collector fan-out/redaction and Intune-managed rollout.
+5. **Scale it** — collector fan-out/redaction and enterprise managed-settings rollout.
 
 Good follow-up experiments: per-surface cache-hit rate over a week, model-mix drift, tool latency
 outliers, and comparing agent (`invoke_agent`) vs single-shot (`chat`) shapes across surfaces.
@@ -505,7 +709,11 @@ so it needs **no consent/GDPR banner**. Telemetry goes to *our own* Application 
 ## References
 
 - [Monitor agent usage with OpenTelemetry (VS Code docs)](https://code.visualstudio.com/docs/agents/guides/monitoring-agents)
+- [Manage AI settings in the enterprise (VS Code docs)](https://code.visualstudio.com/docs/enterprise/ai-settings)
 - [GitHub Copilot CLI — OpenTelemetry monitoring](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring)
+- [Enterprise-managed OpenTelemetry export for VS Code and CLI (changelog, 2026-07-08)](https://github.blog/changelog/2026-07-08-enterprise-managed-opentelemetry-export-for-vs-code-and-cli/)
+- [Deploy managed Copilot settings via MDM (changelog, 2026-07-08)](https://github.blog/changelog/2026-07-08-deploy-managed-copilot-settings-via-mdm/)
+- [Copilot for JetBrains adds improved OpenTelemetry configuration (changelog, 2026-07-28)](https://github.blog/changelog/2026-07-28-github-copilot-for-jetbrains-ides-adds-agent-hooks-improved-opentelemetry-configuration-and-more/)
 - [Monitor AI coding agents with Grafana (Microsoft Learn)](https://learn.microsoft.com/en-us/azure/managed-grafana/grafana-opentelemetry-app-insights)
 - [Azure Monitor dashboards with Grafana](https://learn.microsoft.com/en-us/azure/azure-monitor/visualize/visualize-use-grafana-dashboards)
 - [Grafana Cloud OTLP endpoint](https://grafana.com/docs/grafana-cloud/send-data/otlp/)

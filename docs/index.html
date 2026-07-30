@@ -37,7 +37,7 @@
 <link rel="manifest" href="site.webmanifest" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -83,9 +83,9 @@
     --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.05);
     --ink:#eef3fb; --muted:#94a1b6; --faint:#5f6b7f;
     --hit:#73bf69; --miss:#ff9830; --otel:#f97316; --vscode:#4c8dff; --cli:#a06bff;
-    --disp:"Space Grotesk",system-ui,sans-serif;
-    --body:"IBM Plex Sans",system-ui,sans-serif;
-    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+    --disp:"Sora",system-ui,sans-serif;
+    --body:"Karla",system-ui,sans-serif;
+    --mono:"DM Mono",ui-monospace,Consolas,monospace;
     --maxw:1080px;
   }
   *{margin:0;padding:0;box-sizing:border-box}
@@ -104,14 +104,15 @@
 
   /* eyebrow */
   .eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.26em;text-transform:uppercase;
-    color:var(--otel);font-weight:600;display:inline-flex;align-items:center;gap:10px}
-  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--hit);box-shadow:0 0 10px var(--hit)}
+    color:var(--otel);font-weight:500;display:inline-flex;align-items:center;gap:10px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--hit);
+    outline:3px solid rgba(115,191,105,.18);outline-offset:0}
 
   /* nav */
   nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
     background:rgba(10,14,26,.72);border-bottom:1px solid var(--line2)}
   .nav-in{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:22px}
-  .brand{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:9px}
+  .brand{font-family:var(--mono);font-weight:500;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:9px}
   .brand .sq{width:11px;height:11px;border-radius:3px;background:var(--hit)}
   .nav-links{margin-left:auto;display:flex;gap:26px;font-size:14px;color:var(--muted);font-family:var(--mono)}
   .nav-links a:hover{color:var(--ink)}
@@ -122,7 +123,7 @@
   /* hero */
   .hero{padding:88px 0 40px}
   h1{font-family:var(--disp);font-weight:700;font-size:clamp(40px,7vw,74px);line-height:1.02;
-    letter-spacing:-1.6px;margin:24px 0 0}
+    letter-spacing:-.022em;margin:24px 0 0}
   h1 .see{color:var(--otel);position:relative;white-space:nowrap}
   h1 .see:after{content:"";position:absolute;left:0;right:0;bottom:4px;height:12px;border-radius:4px;
     background:linear-gradient(90deg,var(--otel),rgba(249,115,22,0));opacity:.32}
@@ -159,15 +160,13 @@
   /* section scaffolding */
   section{padding:66px 0;border-top:1px solid var(--line2)}
   .sec-head{max-width:720px}
-  .sec-head h2{font-family:var(--disp);font-weight:600;font-size:clamp(28px,4.4vw,40px);letter-spacing:-.7px;line-height:1.08;margin-top:14px}
+  .sec-head h2{font-family:var(--disp);font-weight:600;font-size:clamp(28px,4.4vw,40px);letter-spacing:-.018em;line-height:1.08;margin-top:14px}
   .sec-head p{margin-top:16px;color:var(--muted);font-size:19px}
   .sec-head p b{color:var(--ink);font-weight:600}
 
-  /* divider tickline (thin) */
-  .rule{height:12px;background-repeat:repeat-x;background-size:14px 12px;opacity:.5;margin:0;border:0;
-    background-image:
-      linear-gradient(90deg,var(--hit) 0 3px, transparent 3px 14px),
-      linear-gradient(90deg,transparent 0 7px, var(--miss) 7px 9px, transparent 9px 14px);}
+  /* section marker: hairline with a short accent lead-in */
+  .rule{height:2px;margin:0;border:0;
+    background:linear-gradient(90deg,var(--otel) 0 56px, var(--line2) 56px 100%);}
 
   /* insight: two surfaces */
   .insight{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
@@ -223,7 +222,7 @@
   /* privacy */
   .plist{margin-top:30px;display:grid;gap:14px}
   .pitem{display:grid;grid-template-columns:26px 1fr;gap:14px;align-items:start}
-  .pitem .ic{color:var(--hit);font-family:var(--mono);font-weight:600;font-size:18px;line-height:1.5}
+  .pitem .ic{color:var(--hit);font-family:var(--mono);font-weight:500;font-size:18px;line-height:1.5}
   .pitem p{color:var(--muted);font-size:15.5px}
   .pitem p b{color:var(--ink);font-weight:600}
   .pitem code{font-family:var(--mono);font-size:13.5px;color:var(--ink);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:5px}
@@ -304,8 +303,8 @@
         <span class="eyebrow">The idea</span>
         <h2>Two surfaces, one vocabulary — so one dashboard.</h2>
         <p>VS Code Copilot Chat and the Copilot CLI both emit the OpenTelemetry <b>GenAI conventions</b>.
-          The attributes are identical; they differ in exactly one thing — <b>service.name</b>. Turn that
-          into a dropdown and two data streams become one board.</p>
+          The attributes are identical; the surfaces differ in <b>service.name</b>. Turn that into a
+          dropdown and two data streams become one board.</p>
       </div>
       <div class="insight">
         <div class="scard">
@@ -322,6 +321,12 @@
       <div class="selnote"><b>Copilot surface</b> selector →
         <span class="mono">All (VS Code + CLI)</span> · <span class="mono">VS Code</span> · <span class="mono">Copilot CLI</span>.
         Keep <span class="mono">OTEL_SERVICE_NAME</span> unset so each surface keeps its own name.</div>
+      <div class="selnote" style="margin-top:12px"><b>Two axes, not one</b> (updated July 2026) →
+        <b>surface</b> is <span class="mono">resource.service.name</span>
+        (<span class="mono">copilot-chat</span> · <span class="mono">github-copilot</span> · <span class="mono">claude-code</span>),
+        <b>agent</b> is <span class="mono">gen_ai.agent.name</span> / <span class="mono">gen_ai.agent.id</span>.
+        A CLI session launched <em>inside</em> VS Code emits under both names — so the dashboards now ship a
+        <b>Turns by Agent</b> panel to tell them apart.</div>
     </div>
   </section>
 
@@ -330,18 +335,25 @@
       <div class="sec-head">
         <span class="eyebrow">The honest map</span>
         <h2>Which Copilot surfaces emit OpenTelemetry?</h2>
-        <p>Not all of them — yet. This project covers the two you can collect from today — VS&nbsp;Code and the
-          CLI (the desktop Copilot app rides on the CLI) — plus the SDK for apps you build. No overclaiming.</p>
+        <p>Not all of them — yet. This project is built and verified on the two you can collect from today —
+          VS&nbsp;Code and the CLI (the desktop Copilot app rides on the CLI runtime) — plus the SDK for apps
+          you build. <b>JetBrains joined the list in July 2026.</b> No overclaiming.</p>
       </div>
       <div class="cov">
-        <div class="row yes"><span class="s">✓</span><span class="n">VS Code Copilot Chat</span><span class="m">settings or OTEL_* env</span></div>
+        <div class="row yes"><span class="s">✓</span><span class="n">VS Code Copilot Chat</span><span class="m">settings, OTEL_* env, or managed settings</span></div>
         <div class="row yes"><span class="s">✓</span><span class="n">GitHub Copilot CLI</span><span class="m">OTEL_* env vars</span></div>
-        <div class="row yes"><span class="s">✓</span><span class="n">Copilot app (desktop)</span><span class="m">frontend to the CLI → github-copilot</span></div>
+        <div class="row yes"><span class="s">✓</span><span class="n">Copilot app (desktop)</span><span class="m">own policy, CLI runtime → github-copilot</span></div>
         <div class="row yes"><span class="s">✓</span><span class="n">Copilot SDK — for apps you build</span><span class="m">TelemetryConfig</span></div>
+        <div class="row yes"><span class="s">✓</span><span class="n">JetBrains plugins <b>· new July 2026</b></span><span class="m">Settings → Tools → Copilot → Chat · service.name not yet verified</span></div>
+        <div class="row yes"><span class="s">✓</span><span class="n">Claude agent / Claude Code via Copilot</span><span class="m">copilot-chat, claude-code</span></div>
         <div class="row no"><span class="s">—</span><span class="n">Visual Studio extension</span><span class="m">not today</span></div>
-        <div class="row no"><span class="s">—</span><span class="n">JetBrains plugins</span><span class="m">Rider's OTel plugin ≠ Copilot</span></div>
         <div class="row no"><span class="s">—</span><span class="n">Cloud coding agent (opens PRs)</span><span class="m">server-side; client counters only</span></div>
       </div>
+      <div class="selnote" style="margin-top:18px"><b>JetBrains caveat.</b> The July 2026 plugin release added an
+        OpenTelemetry export panel, but GitHub hasn't documented which <span class="mono">service.name</span> it
+        reports and we couldn't verify it firsthand — so the dashboards don't ship a JetBrains option yet. Point it
+        at the same collector, run <span class="mono">{ } | count_over_time() by (resource.service.name)</span>,
+        and add whatever name shows up.</div>
     </div>
   </section>
 
@@ -357,11 +369,12 @@
       </div>
       <div class="grid3">
         <div class="mcard"><div class="lbl">cache</div><h3>Prompt‑cache efficiency</h3><p>Hit vs miss over time, per model, per surface.</p><div class="kv">gen_ai.usage.cache_read<br>gen_ai.usage.cache_creation</div></div>
-        <div class="mcard"><div class="lbl">cost</div><h3>Tokens &amp; cost</h3><p>Input/output/cached tokens, cost and AI units per turn.</p><div class="kv">gen_ai.usage.*_tokens<br>github.copilot.cost · aiu</div></div>
-        <div class="mcard"><div class="lbl">latency</div><h3>Speed</h3><p>Duration and time‑to‑first‑token, sliced by model.</p><div class="kv">gen_ai.client.operation.duration<br>time_to_first_token</div></div>
+        <div class="mcard"><div class="lbl">cost</div><h3>Tokens &amp; cost</h3><p>Input/output/cached tokens, plus real per‑turn cost and AI credits.</p><div class="kv">gen_ai.usage.*_tokens<br>github.copilot.nano_aiu ÷ 1e9</div></div>
+        <div class="mcard"><div class="lbl">latency</div><h3>Speed</h3><p>Duration and time‑to‑first‑token, sliced by model.</p><div class="kv">gen_ai.client.operation.duration<br>time_to_first_chunk</div></div>
         <div class="mcard"><div class="lbl">tools</div><h3>Tool usage &amp; reliability</h3><p>Which tools run, how often, how slow, how often they fail.</p><div class="kv">execute_tool · gen_ai.tool.name</div></div>
         <div class="mcard"><div class="lbl">outcomes</div><h3>Adoption &amp; impact</h3><p>Edits accepted, lines shipped, edit survival, thumbs, PRs.</p><div class="kv">edit.acceptance · lines_of_code<br>edit.survival · pull_request</div></div>
         <div class="mcard"><div class="lbl">reliability</div><h3>Errors &amp; sessions</h3><p>Error types, stuck/aborted sessions, context compaction.</p><div class="kv">error.type · session.abort</div></div>
+        <div class="mcard"><div class="lbl">why</div><h3>Why the cache missed</h3><p>Truncation and compaction rewrite the prompt prefix — the direct <em>cause</em> of a miss. Span events tell you when.</p><div class="kv">session.truncation<br>session.compaction_start / _complete</div></div>
       </div>
     </div>
   </section>
@@ -372,7 +385,9 @@
         <span class="eyebrow">See it</span>
         <h2>One board. Flip the selector.</h2>
         <p>Cache hit/miss, calls by surface, models, tools, and a raw trace table — filtered to
-          <b>VS Code</b>, <b>the CLI</b>, or both.</p>
+          <b>VS Code</b>, <b>the CLI</b>, or both. The July 2026 update adds <b>AI credits and cost</b>,
+          a <b>Turns by Agent</b> breakdown, and a <b>truncation/compaction</b> panel that puts the
+          <em>cause</em> of a cache miss right next to the effect.</p>
       </div>
       <div class="shotframe">
         <div class="shotbar"><span class="b"></span><span class="b"></span><span class="b"></span>
@@ -399,6 +414,16 @@
         <div class="bcard"><div class="tag">C</div><h3>Azure Container Apps</h3><p>Cloud collector, scale‑to‑zero. Nothing runs locally.</p><div class="cost">Scale-to-zero</div></div>
         <div class="bcard"><div class="tag">D</div><h3>Grafana Cloud</h3><p>Point straight at managed Tempo. Nothing to run.</p><div class="cost">Free tier</div></div>
       </div>
+      <div class="selnote" style="margin-top:18px"><b>Rolling it out to a team</b> (new, July 2026) →
+        GitHub now ships a supported <b>enterprise managed settings</b> path with a dedicated
+        <span class="mono">telemetry</span> block — <span class="mono">enabled</span>,
+        <span class="mono">endpoint</span>, <span class="mono">protocol</span>,
+        <span class="mono">lockCaptureContent</span>, <span class="mono">resourceAttributes</span> and
+        <span class="mono">headers</span> (that's where the collector token goes). Delivered via native MDM,
+        a server-managed <span class="mono">managed-settings.json</span>, or a file on disk — no more pushing raw
+        env vars. One warning: don't set <span class="mono">telemetry.serviceName</span> fleet-wide, or every
+        surface collapses into one name and the surface selector stops working. The repo has ready-to-paste
+        samples per backend.</div>
     </div>
   </section>
 
@@ -412,8 +437,8 @@
       <div class="plist">
         <div class="pitem"><span class="ic">→</span><p><b>Telemetry goes to <em>your</em> endpoint, not GitHub.</b> Enabling OTLP export routes data to the collector or backend you configure. It doesn't send anything extra to GitHub or Microsoft.</p></div>
         <div class="pitem"><span class="ic">→</span><p><b>No prompts, code, or responses by default.</b> Content capture is off — the GenAI conventions' deliberate opt‑in. You get metadata: model, <code>token counts</code>, durations, tool names, cache hits/misses.</p></div>
-        <div class="pitem"><span class="ic">→</span><p><b>Know the two identifying bits.</b> VS Code attaches repo URL / branch / commit / org; the CLI attaches a <em>pseudonymous</em> user id. MCP server names are SHA‑256 hashed.</p></div>
-        <div class="pitem"><span class="ic">→</span><p><b>The collector is your redaction control point.</b> On the collector backends you can <code>delete</code> or <code>hash</code> attributes (e.g. drop <code>github.copilot.git.*</code>) before anything leaves.</p></div>
+        <div class="pitem"><span class="ic">→</span><p><b>"Content off" isn't "anonymous" — and we checked.</b> With capture disabled, the CLI still ships <code>enduser.pseudo.id</code> (a stable pseudonymous user id), your tool/MCP inventory, and installed skill names; VS Code attaches repo URL / branch / commit / org. Fine for a backend you own — worth scrubbing for one you share.</p></div>
+        <div class="pitem"><span class="ic">→</span><p><b>The collector is your redaction control point.</b> Both collector configs ship a working <code>attributes/scrub</code> processor that <code>delete</code>s those identifiers before anything leaves — lenient for your own tenant, strict for a shared one.</p></div>
         <div class="pitem"><span class="ic">→</span><p><b>You choose where data lives.</b> On your laptop, in your Azure region (pick an EEA region for residency), or Grafana Cloud's SaaS. Content capture, if you ever turn it on, only against a backend you own.</p></div>
       </div>
     </div>
