@@ -1,10 +1,10 @@
-# OpenTelemetry Collector — CLOUD variant for Option D (Azure Container Apps).
+# OpenTelemetry Collector — CLOUD variant for Option C (Azure Container Apps).
 #
-#   VS Code (Copilot OTel)  --OTLP/HTTP + Bearer token-->  this collector (on ACA, scale-to-zero)
-#                                                      -->  Azure Application Insights
+#   VS Code / Copilot CLI  --OTLP/HTTP + bearer token-->  this collector (on ACA, scale-to-zero)
+#                                                    -->  Azure Application Insights
 #
 # Nothing runs locally. The public ingress is protected by a shared bearer token
-# (VS Code sends it via OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token>).
+# (clients send it via OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token>).
 #
 # Secrets are injected as env vars by the container app:
 #   INGEST_TOKEN                          - the shared bearer token clients must present
@@ -19,7 +19,7 @@ receivers:
   otlp:
     protocols:
       # Only HTTP is exposed — Azure Container Apps allows a single ingress port, and the
-      # Copilot client uses OTLP/HTTP (http/protobuf) by default.
+      # Copilot clients use OTLP/HTTP.
       http:
         endpoint: 0.0.0.0:4318
         auth:
@@ -29,6 +29,62 @@ processors:
   batch:
     timeout: 5s
     send_batch_size: 512
+
+  # ---------------------------------------------------------------------------
+  # STRICT profile. Option C is a SHARED endpoint fed by a whole fleet, so the
+  # collector is the last place to scrub before data leaves the developer's machine.
+  #
+  # 1. Identifiers Copilot emits by DEFAULT (NOT gated behind content capture):
+  #      enduser.pseudo.id             pseudonymous per-developer id (CLI)
+  #      github.copilot.context.*      installed skill / custom-agent inventory (CLI)
+  #      gen_ai.tool.definitions       tool + MCP server inventory (observed without capture)
+  #      github.copilot.git.*          repo remote URL, branch, commit (VS Code)
+  #      copilot_chat.repo.*           legacy dual-emitted equivalents of the above
+  # 2. Belt-and-braces: strip content-capture payloads even if a developer turns
+  #    OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT / captureContent on locally.
+  # ---------------------------------------------------------------------------
+  attributes/scrub:
+    actions:
+      # -- default-on identifiers --
+      - key: enduser.pseudo.id
+        action: delete
+      - key: github.copilot.context.skills
+        action: delete
+      - key: github.copilot.context.custom_agent_names
+        action: delete
+      - key: github.copilot.git.repository
+        action: delete
+      - key: github.copilot.git.branch
+        action: delete
+      - key: github.copilot.git.commit_sha
+        action: delete
+      - key: github.copilot.github.org
+        action: delete
+      - key: copilot_chat.repo.remote_url
+        action: delete
+      - key: copilot_chat.repo.head_branch_name
+        action: delete
+      - key: copilot_chat.repo.head_commit_hash
+        action: delete
+      # -- content-capture payloads (only present if a client enabled capture) --
+      - key: gen_ai.input.messages
+        action: delete
+      - key: gen_ai.output.messages
+        action: delete
+      - key: gen_ai.system_instructions
+        action: delete
+      - key: gen_ai.tool.definitions
+        action: delete
+      - key: gen_ai.tool.call.arguments
+        action: delete
+      - key: gen_ai.tool.call.result
+        action: delete
+      - key: github.copilot.tool.parameters.command
+        action: delete
+      - key: github.copilot.tool.parameters.file_path
+        action: delete
+      - key: github.copilot.tool.parameters.mcp_server_name
+        action: delete
 
 exporters:
   azuremonitor:
@@ -43,7 +99,17 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
+      processors: [attributes/scrub, batch]
+      exporters: [azuremonitor, debug]
+    # Copilot emits GenAI metrics too — without this pipeline they are silently discarded.
+    metrics:
+      receivers: [otlp]
       processors: [batch]
+      exporters: [azuremonitor, debug]
+    # VS Code Copilot Chat emits OTel events/logs.
+    logs:
+      receivers: [otlp]
+      processors: [attributes/scrub, batch]
       exporters: [azuremonitor, debug]
   telemetry:
     logs:

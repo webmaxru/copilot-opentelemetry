@@ -1,8 +1,8 @@
-# OpenTelemetry Collector — enterprise / team variant.
+# OpenTelemetry Collector — enterprise / team variant (Option B).
 #
-# VS Code (Copilot OTel) -> this collector (OTLP :4318 / :4317)
-#   -> Grafana Tempo   (local, TraceQL dashboards for the platform team)
-#   -> Azure Application Insights (azuremonitor exporter, for org-wide APM + Managed Grafana)
+# VS Code / Copilot CLI (Copilot OTel) -> this collector (OTLP :4318 / :4317)
+#   -> Grafana Tempo   (local, TraceQL dashboards for the platform team)  [traces only]
+#   -> Azure Application Insights (azuremonitor exporter)                 [traces + metrics + logs]
 #
 # This is the "insert a Collector between the editor and the backend so you can fan out
 # to more than one destination" shape described in the article's "Why no collector" section.
@@ -26,10 +26,19 @@ processors:
       - key: telemetry.pipeline
         value: otel-collector
         action: upsert
+  # Drop the pseudonymous per-developer identifier. Copilot emits this on every invoke_agent
+  # span REGARDLESS of content capture, so "captureContent: false" alone does not make the
+  # telemetry non-attributable. Option B keeps the git/repo attributes (they are useful for
+  # per-repo slicing and the data stays in your own tenant) — see otel-collector-cloud.yaml
+  # for the stricter profile.
+  attributes/scrub:
+    actions:
+      - key: enduser.pseudo.id
+        action: delete
 
 exporters:
-  # Fan-out target 1: local Grafana Tempo (gRPC OTLP).
-  otlp/tempo:
+  # Fan-out target 1: local Grafana Tempo (OTLP gRPC). Tempo stores traces only.
+  otlp_grpc/tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
@@ -47,8 +56,21 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
+      processors: [attributes/scrub, resource, batch]
+      exporters: [otlp_grpc/tempo, azuremonitor, debug]
+    # Copilot also emits GenAI metrics (token usage, operation duration, time-to-first-chunk,
+    # inference/tool call counts). Without this pipeline they are silently discarded.
+    # Tempo cannot store OTLP metrics, so these go to Application Insights only.
+    metrics:
+      receivers: [otlp]
       processors: [resource, batch]
-      exporters: [otlp/tempo, azuremonitor, debug]
+      exporters: [azuremonitor, debug]
+    # VS Code Copilot Chat additionally emits OTel events/logs (session start, tool calls,
+    # edit survival, user feedback).
+    logs:
+      receivers: [otlp]
+      processors: [attributes/scrub, resource, batch]
+      exporters: [azuremonitor, debug]
   telemetry:
     logs:
       level: info
