@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 500" width="1120" height="500" role="img"
+     aria-label="With content capture switched off, Copilot still ships a pseudonymous user id, the tool and MCP inventory, installed skill names, custom agent names, and repository metadata.">
+  <title>“Content capture off” does not mean anonymous</title>
+  <desc>Two columns. The left column lists what content capture actually withholds: prompts, responses, and code.
+        The right column lists what still ships by default on every span, verified on the wire with Copilot CLI 1.0.76
+        and content capture disabled. Below, a collector processor deletes the pseudonymous id.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase}
+      .h{font-size:16px;font-weight:600;fill:#eef3fb}
+      .k{font-size:12.5px;fill:#eef3fb}
+      .v{font-size:11.5px;fill:#5f6b7f}
+    </style>
+    <linearGradient id="p2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f1626"/><stop offset="1" stop-color="#111a2c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1120" height="500" fill="#0a0e1a"/>
+
+  <text class="m lbl" x="40" y="36" fill="#5f6b7f">captureContent: false · verified on the wire, copilot cli 1.0.76</text>
+
+  <!-- LEFT: what it does withhold -->
+  <g transform="translate(40,58)">
+    <rect width="472" height="292" rx="13" fill="url(#p2)" stroke="#73bf69" stroke-opacity=".3"/>
+    <text class="m lbl" x="22" y="32" fill="#73bf69">what it really withholds</text>
+    <text class="d h" x="22" y="66">Your words and your code</text>
+
+    <g transform="translate(22,92)">
+      <text class="m k" y="20">· prompts you typed</text>
+      <text class="m k" y="48">· model responses</text>
+      <text class="m k" y="76">· file contents and diffs</text>
+      <text class="m k" y="104">· tool arguments and results</text>
+    </g>
+
+    <rect x="22" y="216" width="428" height="62" rx="9" fill="#73bf69" fill-opacity=".07"/>
+    <text class="m" x="40" y="242" font-size="12.5" fill="#94a1b6">This part is real, and it is the default.</text>
+    <text class="m" x="40" y="264" font-size="12.5" fill="#94a1b6">Nothing you wrote leaves the machine.</text>
+  </g>
+
+  <!-- RIGHT: what still ships -->
+  <g transform="translate(536,58)">
+    <rect width="544" height="292" rx="13" fill="url(#p2)" stroke="#ff9830" stroke-opacity=".38"/>
+    <text class="m lbl" x="22" y="32" fill="#ff9830">what still ships, on every span</text>
+    <text class="d h" x="22" y="66">Enough to identify a person</text>
+
+    <g transform="translate(22,88)">
+      <text class="m k" y="20">enduser.pseudo.id</text>
+      <text class="m v" x="230" y="20">stable pseudonymous user id</text>
+      <text class="m k" y="48">gen_ai.tool.definitions</text>
+      <text class="m v" x="230" y="48">your full tool + MCP inventory</text>
+      <text class="m k" y="76">github.copilot.context.skills</text>
+      <text class="m v" x="230" y="76">every skill installed locally</text>
+      <text class="m k" y="104">…custom_agent_names</text>
+      <text class="m v" x="230" y="104">your custom agent names</text>
+      <text class="m k" y="132">github.copilot.git.*</text>
+      <text class="m v" x="230" y="132">repo URL, branch, commit, org</text>
+    </g>
+
+    <rect x="22" y="238" width="500" height="42" rx="9" fill="#ff9830" fill-opacity=".08"/>
+    <text class="m" x="40" y="264" font-size="12.5" fill="#ff9830">Every span is attributable to one named developer.</text>
+  </g>
+
+  <!-- the fix -->
+  <g transform="translate(40,358)">
+    <text class="m lbl" x="0" y="12" fill="#f97316">the fix is four lines in the collector</text>
+    <rect y="24" width="1040" height="116" rx="11" fill="#070b14" stroke="#ffffff" stroke-opacity=".09"/>
+    <text class="m" xml:space="preserve" x="22" y="48" font-size="12.5" fill="#c9d6ea">processors:</text>
+    <text class="m" xml:space="preserve" x="22" y="67" font-size="12.5" fill="#a06bff">  attributes/scrub:</text>
+    <text class="m" xml:space="preserve" x="22" y="86" font-size="12.5" fill="#c9d6ea">    actions:</text>
+    <text class="m" xml:space="preserve" x="22" y="105" font-size="12.5" fill="#c9d6ea">      - key: <tspan fill="#73bf69">enduser.pseudo.id</tspan>   action: <tspan fill="#ff9830">delete</tspan><tspan fill="#5f6b7f">     for a backend you do not own, this is not optional</tspan></text>
+    <text class="m" xml:space="preserve" x="22" y="128" font-size="11.5" fill="#5f6b7f">same shape for gen_ai.tool.definitions, github.copilot.context.skills, github.copilot.git.* — backend D has no collector, so none of this happens there</text>
+  </g>
+</svg>

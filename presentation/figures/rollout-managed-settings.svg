@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 480" width="1120" height="480" role="img"
+     aria-label="Fleet rollout: managed Copilot settings arrive via MDM, a server-managed repository file, or a file on disk, and override environment variables and user settings.">
+  <title>Rolling it out: managed settings precedence</title>
+  <desc>Three delivery channels feed a telemetry policy block. Native MDM beats server-managed, which beats
+        file-based, and the winner is used whole. The resulting policy overrides environment variables, which
+        override user settings, which override defaults.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;fill:#5f6b7f}
+      .h{font-size:14px;font-weight:600;fill:#eef3fb}
+      .s{font-size:11px;fill:#5f6b7f}
+      .wire{stroke:#ffffff;stroke-opacity:.16;stroke-width:1.5;fill:none}
+    </style>
+    <linearGradient id="p3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f1626"/><stop offset="1" stop-color="#111a2c"/>
+    </linearGradient>
+    <marker id="ar2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#ffffff" fill-opacity=".3"/>
+    </marker>
+  </defs>
+  <rect width="1120" height="480" fill="#0a0e1a"/>
+
+  <text class="m lbl" x="40" y="34">three delivery channels · winner takes all, blocks are not merged</text>
+
+  <g transform="translate(40,52)">
+    <rect width="300" height="66" rx="11" fill="url(#p3)" stroke="#73bf69" stroke-opacity=".38"/>
+    <text class="d h" x="18" y="28">1 · Native MDM</text>
+    <text class="m s" x="18" y="48">Intune, Jamf — HKLM\…\Policies\GitHubCopilot</text>
+  </g>
+  <g transform="translate(40,132)">
+    <rect width="300" height="66" rx="11" fill="url(#p3)" stroke="#ffffff" stroke-opacity=".11"/>
+    <text class="d h" x="18" y="28">2 · Server-managed</text>
+    <text class="m s" x="18" y="48">copilot/managed-settings.json in .github-private</text>
+  </g>
+  <g transform="translate(40,212)">
+    <rect width="300" height="66" rx="11" fill="url(#p3)" stroke="#ffffff" stroke-opacity=".11"/>
+    <text class="d h" x="18" y="28">3 · File-based</text>
+    <text class="m s" x="18" y="48">%ProgramFiles%\GitHubCopilot\… (root-owned)</text>
+  </g>
+
+  <path class="wire" d="M340 85 H 372 M340 165 H 372 M340 245 H 372 M372 85 V 245 M372 165 H 404" marker-end="url(#ar2)"/>
+
+  <!-- policy block -->
+  <g transform="translate(412,52)">
+    <rect width="668" height="226" rx="13" fill="#070b14" stroke="#f97316" stroke-opacity=".38"/>
+    <text class="m lbl" x="22" y="30" fill="#f97316">the telemetry block</text>
+    <text class="m" x="22" y="60" font-size="12.5" fill="#c9d6ea">{ <tspan fill="#a06bff">"telemetry"</tspan>: {</text>
+    <text class="m" x="22" y="82" font-size="12.5" fill="#c9d6ea">    <tspan fill="#a06bff">"enabled"</tspan>: <tspan fill="#ff9830">true</tspan>,
+      <tspan fill="#5f6b7f">                       developers cannot turn it off</tspan></text>
+    <text class="m" x="22" y="104" font-size="12.5" fill="#c9d6ea">    <tspan fill="#a06bff">"endpoint"</tspan>: <tspan fill="#73bf69">"https://collector…"</tspan>,</text>
+    <text class="m" x="22" y="126" font-size="12.5" fill="#c9d6ea">    <tspan fill="#a06bff">"captureContent"</tspan>: <tspan fill="#ff9830">false</tspan>,
+      <tspan fill="#a06bff">"lockCaptureContent"</tspan>: <tspan fill="#ff9830">true</tspan>,</text>
+    <text class="m" x="22" y="148" font-size="12.5" fill="#c9d6ea">    <tspan fill="#a06bff">"headers"</tspan>: { <tspan fill="#a06bff">"Authorization"</tspan>: <tspan fill="#73bf69">"Bearer …"</tspan> },
+      <tspan fill="#5f6b7f">  the supported way</tspan></text>
+    <text class="m" x="22" y="170" font-size="12.5" fill="#c9d6ea">    <tspan fill="#a06bff">"resourceAttributes"</tspan>: { <tspan fill="#a06bff">"team"</tspan>: <tspan fill="#73bf69">"platform"</tspan> }</text>
+    <text class="m" x="22" y="192" font-size="12.5" fill="#c9d6ea">} }</text>
+    <text class="m" x="22" y="214" font-size="11.5" fill="#ff9830">✗ do not set "serviceName" — it collapses every surface into one name</text>
+  </g>
+
+  <!-- precedence -->
+  <text class="m lbl" x="40" y="330">precedence</text>
+  <g transform="translate(40,344)">
+    <rect width="248" height="52" rx="10" fill="#f97316" fill-opacity=".1" stroke="#f97316" stroke-opacity=".42"/>
+    <text class="d h" x="18" y="24" fill="#f97316">policy</text>
+    <text class="m s" x="18" y="42">managed settings</text>
+  </g>
+  <g transform="translate(304,344)">
+    <rect width="248" height="52" rx="10" fill="url(#p3)" stroke="#ffffff" stroke-opacity=".11"/>
+    <text class="d h" x="18" y="24">environment variable</text>
+    <text class="m s" x="18" y="42">OTEL_* · COPILOT_OTEL_ENABLED</text>
+  </g>
+  <g transform="translate(568,344)">
+    <rect width="248" height="52" rx="10" fill="url(#p3)" stroke="#ffffff" stroke-opacity=".11"/>
+    <text class="d h" x="18" y="24">user setting</text>
+    <text class="m s" x="18" y="42">settings.json</text>
+  </g>
+  <g transform="translate(832,344)">
+    <rect width="248" height="52" rx="10" fill="url(#p3)" stroke="#ffffff" stroke-opacity=".11"/>
+    <text class="d h" x="18" y="24">default</text>
+    <text class="m s" x="18" y="42">off</text>
+  </g>
+  <path class="wire" d="M288 370 H 300 M552 370 H 564 M816 370 H 828" marker-end="url(#ar2)"/>
+
+  <g transform="translate(40,420)">
+    <rect width="1040" height="42" rx="10" fill="#ffffff" fill-opacity=".025" stroke="#ffffff" stroke-opacity=".07"/>
+    <text class="m" x="20" y="26" font-size="12.5" fill="#94a1b6">
+      Verify what actually applied:
+      <tspan fill="#eef3fb">Developer: Policy Diagnostics</tspan>
+      <tspan fill="#5f6b7f"> in the VS Code command palette. The agent host reads config at start-up — reload the window.</tspan>
+    </text>
+  </g>
+</svg>

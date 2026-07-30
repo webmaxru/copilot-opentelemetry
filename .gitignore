@@ -12,3 +12,6 @@ docs/analytics.js
 
 # APM dependencies
 apm_modules/
+
+# Local agent tooling caches
+.impeccable/

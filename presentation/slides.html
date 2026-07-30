@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Copilot, Traced — OpenTelemetry for GitHub Copilot</title>
+<meta name="description" content="A 25-minute developer talk: GitHub Copilot already emits OpenTelemetry. Wire it up, watch your prompt-cache hit rate, and find out what your agent actually costs." />
+<meta name="author" content="Maxim Salnikov" />
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/deck.css" />
+</head>
+<body>
+
+<div class="deck">
+<div class="stage">
+
+<!-- ══════════════════════════════════════════════════ 1 · TITLE ══════ -->
+<section class="slide slide--title" data-title="Copilot, Traced" data-chapter="the blind spot" data-mark="0">
+  <div class="eyebrow"><i class="dot"></i>opentelemetry for github copilot</div>
+  <h1>Copilot,<br><span class="underline-see">Traced</span>.</h1>
+  <p class="sub">Your AI pair programmer is a distributed system. <em>It has been emitting
+    OpenTelemetry this whole time.</em></p>
+  <div class="title-rule"></div>
+  <div class="byline">
+    <span class="who">25 minutes</span><i class="sep"></i>
+    <span>4 interactive demos</span><i class="sep"></i>
+    <span>everything runs on your laptop</span>
+  </div>
+  <script type="text/notes">
+    <p><strong>Land the room before the first slide changes.</strong> Do not read the title.</p>
+    <p>"Quick show of hands — who used Copilot today? Keep it up if you know how many tokens it burned.
+    Keep it up if you know what it <em>cost</em>." Hands drop. That silence is the talk.</p>
+    <p>Set expectations: no vendor pitch, no cloud account needed, four things you can run tonight.
+    <em>Press N any time to see these notes; press T to start the pace timer.</em></p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 2 · HOOK ═══════ -->
+<section class="slide slide--statement" data-title="Three questions" data-chapter="the blind spot" data-mark="45">
+  <div class="eyebrow"><i class="dot"></i>about the last thing copilot did for you</div>
+  <h2>Three questions, and I don’t<br>think anyone here can<br>answer them.</h2>
+  <div class="slide-body top" style="flex:0 0 auto;margin-top:34px">
+    <div class="cols c3">
+      <div class="card">
+        <div class="lbl">01</div>
+        <h3>How many tokens?</h3>
+        <p>Not roughly. The actual number your last turn sent to the model.</p>
+      </div>
+      <div class="card">
+        <div class="lbl">02</div>
+        <h3>What did it cost?</h3>
+        <p>In credits. For that one turn. On that one repo.</p>
+      </div>
+      <div class="card">
+        <div class="lbl">03</div>
+        <h3>Was any of it cached?</h3>
+        <p>Or did you pay full price to re-send a prompt the model had already seen?</p>
+      </div>
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>Deliver these <strong>slowly</strong>. One beat between each.</p>
+    <p>"We instrument everything. p99 on a health check nobody calls. And the tool writing a third of our
+    code is a black box we judge by <em>vibes</em>."</p>
+    <p>Do not answer yet. The answer is the whole rest of the talk.</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 3 · CONTRAST ═══ -->
+<section class="slide" data-title="We already know how to do this" data-chapter="the blind spot" data-mark="105">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>the double standard</div>
+    <h2>Your checkout service is better<br>instrumented than the thing<br>writing your code.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2">
+      <div>
+        <div class="card accent-hit">
+          <div class="lbl">your checkout service</div>
+          <h3>Fully observable</h3>
+          <p style="margin-top:10px">Traces. RED metrics. Structured logs. An on-call rotation.
+            A dashboard someone actually looks at. Alerts that page a human at 3 a.m.</p>
+          <div class="kv">latency · error rate · saturation · cost per request</div>
+        </div>
+      </div>
+      <div>
+        <div class="card accent-miss">
+          <div class="lbl">your ai coding agent</div>
+          <h3>“Feels a bit slow today”</h3>
+          <p style="margin-top:10px">No traces, no baseline, no record of which model ran or what it spent.
+            When it degrades you find out on Slack, from a colleague, in a shrug.</p>
+          <div class="kv">vibes · anecdotes · that one loud teammate</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout info" style="margin-top:26px">
+      <span class="t">the twist</span>
+      This is not a missing-feature problem. The telemetry <strong>already exists</strong> — it ships in the
+      product, it follows an open standard, and almost nobody has switched it on.
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>Name the double standard, then immediately relieve it — do not let the room sit in guilt.</p>
+    <p>"The reason isn't laziness. It's that nobody told you the data was there. It is. It's been there
+    for months, behind four settings."</p>
+    <p><em>Transition:</em> "So let's fix the mental model first."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 4 · REFRAME ════ -->
+<section class="slide slide--statement" data-title="Reframe: it's a distributed system" data-chapter="it's already talking" data-mark="175">
+  <div class="eyebrow purple"><i class="dot"></i>the reframe</div>
+  <h2>There’s a <span class="hl-otel">distributed system</span><br>running on your laptop, and<br>you’ve been calling it autocomplete.</h2>
+  <p class="kicker">A planner that calls a model. A model that calls tools. Tools that call your file system,
+    your shell, an MCP server two networks away. Retries, timeouts, a cache, and a bill.
+    <strong>You have instrumented this exact shape a hundred times.</strong></p>
+  <script type="text/notes">
+    <p>This is the pivot of the whole talk. Say it with conviction.</p>
+    <p>"Every instinct you have about microservices transfers. A turn is a request. A tool call is a
+    downstream dependency. The prompt cache is a cache — with a hit rate you can actually chart."</p>
+    <p><em>Transition:</em> "And because it's that shape, it emits exactly what that shape emits."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 5 · THE REVEAL ═ -->
+<section class="slide" data-title="Four settings" data-chapter="it's already talking" data-mark="230">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>the entire integration</div>
+    <h2>This is the whole thing.</h2>
+    <p class="sub">No SDK to install. No agent to inject. No proxy. Copilot speaks OTLP natively —
+      you just tell it where to send it.</p>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2">
+      <div>
+        <div class="code-cap">VS Code · user settings.json</div>
+        <pre class="code sm">{
+  <span class="k">"github.copilot.chat.otel.enabled"</span>: <span class="n">true</span>,
+  <span class="k">"github.copilot.chat.otel.exporterType"</span>: <span class="s">"otlp-http"</span>,
+  <span class="k">"github.copilot.chat.otel.otlpEndpoint"</span>: <span class="s">"http://localhost:4318"</span>,
+  <span class="k">"github.copilot.chat.otel.captureContent"</span>: <span class="n">false</span>
+}</pre>
+      </div>
+      <div>
+        <div class="code-cap">Copilot CLI · same OTEL_* variables</div>
+        <pre class="code sm"><span class="f">setx</span> <span class="k">COPILOT_OTEL_ENABLED</span>        <span class="s">"true"</span>
+<span class="f">setx</span> <span class="k">OTEL_EXPORTER_OTLP_ENDPOINT</span> <span class="s">"http://localhost:4318"</span>
+
+<span class="c"># Leave OTEL_SERVICE_NAME unset. That single omission
+# is what keeps VS Code and the CLI apart on the board.</span></pre>
+      </div>
+    </div>
+    <div class="callout good" style="margin-top:24px">
+      <span class="t">why this is a big deal</span>
+      It is <strong>OTLP</strong>, and the attributes follow the <strong>OpenTelemetry GenAI semantic
+      conventions</strong>. So it lands in Tempo, Jaeger, Application Insights, Grafana Cloud, Honeycomb,
+      Datadog — whatever you already run. No new vendor.
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>Let the room read it. Four lines, then four lines. Count them out loud: "one, two, three, four."</p>
+    <p>"That's the integration. If you take one thing home, take the endpoint."</p>
+    <p>Flag the last comment: <em>do not set OTEL_SERVICE_NAME.</em> It comes back in eight minutes and
+    bites people who skipped it.</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 6 · COVERAGE ═══ -->
+<section class="slide slide--figure" data-title="The honest coverage map" data-chapter="it's already talking" data-mark="290">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>before you promise anyone a dashboard</div>
+    <h2>Which surfaces actually emit? Fewer than you’d hope.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/surface-coverage.svg" alt="Coverage map of Copilot surfaces that export OpenTelemetry as of July 2026." /></div>
+  </div>
+  <script type="text/notes">
+    <p>Credibility slide. Twenty seconds, no more — but do not skip it.</p>
+    <p>"VS Code and the CLI are solid, and I've verified them on the wire. JetBrains got a panel this
+    month but GitHub hasn't documented the service name, so I'm not going to invent one for you.
+    Visual Studio: nothing. The cloud agent that opens PRs: server-side, you don't get it."</p>
+    <p>"Two surfaces is enough. That's most of your day."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 7 · SPAN TREE ══ -->
+<section class="slide slide--figure" data-title="Anatomy of one turn" data-chapter="the vocabulary" data-mark="345">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>what comes out of the wire</div>
+    <h2>One turn is a trace you already know how to read.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/span-tree-anatomy.svg" alt="A Copilot turn as a span tree: invoke_agent root with chat and execute_tool children, annotated with GenAI attributes." /></div>
+  </div>
+  <script type="text/notes">
+    <p>Walk the tree top-down, once.</p>
+    <p>"<strong>invoke_agent</strong> is the turn. It's the only span carrying cost and the agent name —
+    which is why you sum credits here and nowhere else, or you'll double-count."</p>
+    <p>"<strong>chat</strong> is an LLM round trip. Tokens live here. So does the cache."</p>
+    <p>"<strong>execute_tool</strong> is a tool call. Same as a downstream dependency span."</p>
+    <p>"Two chat spans in one turn: the first is orange, the second is green. Hold that thought."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 8 · INTERACTIVE 1 -->
+<section class="slide slide--interactive" data-title="▶ Trace explorer (live)" data-chapter="the vocabulary" data-mark="405">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 1</div>
+    <h2>Click a span. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="trace"></div>
+  </div>
+  <script type="text/notes">
+    <p><strong>Live figure — click things.</strong> Suggested path:</p>
+    <p>1 · Click the <em>first chat span</em>. "Cold start. cache_creation is 21,504 — the entire prompt
+    got written into the cache. Time to first token: 0.94 seconds."</p>
+    <p>2 · Click the <em>second chat span</em>. "Same session, seconds later. cache_read 21,504.
+    We didn't pay for those tokens again — and first token came back in 0.31. Three times faster."</p>
+    <p>3 · Click the <em>third chat span</em> and point at the orange event underneath. "Miss again.
+    And Copilot <em>told us why</em>: compaction_complete. It summarised the history, rewrote the prefix,
+    and the cache was gone. Cause and effect on one screen."</p>
+    <p>4 · Flip the surface toggle. "Same attributes, different service.name. That's why one dashboard
+    covers both."</p>
+    <p><em>If short on time:</em> steps 2 and 3 only.</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 9 · CACHE ══════ -->
+<section class="slide slide--figure" data-title="How the prompt cache works" data-chapter="the vocabulary" data-mark="510">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>the headline metric</div>
+    <h2>Why one moved byte costs you 21,000 tokens.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/cache-anatomy.svg" alt="Prompt cache anatomy: a stable prefix is read back; a single changed token near the front invalidates everything after it." /></div>
+  </div>
+  <script type="text/notes">
+    <p>The single most useful mental model in the talk. Do not rush it.</p>
+    <p>"The cache keys on the <strong>prefix</strong>. Not the prompt — the prefix. Byte-identical from
+    the start, and the model reads it back cheap. Change one token near the front and <em>everything
+    after it</em> is new again."</p>
+    <p>"So a timestamp in your system prompt doesn't cost you a timestamp. It costs you the whole prompt,
+    every single call, forever."</p>
+    <p>Two attribute names to remember: <em>cache_read</em> = hit. <em>cache_creation</em> = miss.</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 10 · WHY CACHE ═ -->
+<section class="slide" data-title="Why hit rate is the metric" data-chapter="the vocabulary" data-mark="570">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>pick one number to care about</div>
+    <h2>Cache hit rate is a leading indicator.</h2>
+    <p class="sub">It is the closest thing Copilot has to a health metric — and it moves <em>before</em>
+      anyone complains.</p>
+  </div>
+  <div class="slide-body">
+    <div class="cols c3">
+      <div class="card accent-hit">
+        <div class="lbl">it means</div>
+        <h3>Your prompt is stable</h3>
+        <p>A high hit rate is a proxy for a well-behaved system prompt, a stable tool inventory,
+          and sessions that aren’t thrashing their context window.</p>
+      </div>
+      <div class="card accent-otel">
+        <div class="lbl">it predicts</div>
+        <h3>Cost, before the invoice</h3>
+        <p>Cached input bills at a fraction of fresh input. Hit rate falls today; the finance
+          conversation happens next month.</p>
+      </div>
+      <div class="card accent-vscode">
+        <div class="lbl">it predicts</div>
+        <h3>Latency, before the complaints</h3>
+        <p>A hit shaves most of the time-to-first-token. "Copilot feels sluggish" is usually
+          a hit-rate chart nobody was looking at.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:26px">
+      <span class="t">the definitions, once</span>
+      <span class="mono">cache_read.input_tokens &gt; 0</span> → <strong class="hl-hit">HIT</strong> ·
+      <span class="mono">cache_creation.input_tokens &gt; 0</span> → <strong class="hl-miss">MISS</strong> ·
+      both zero → no cache in play.
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>"Every observability practice has one number you check first. For a web service it's error rate.
+    For your agent, I'd argue it's this one."</p>
+    <p>"It's not perfect. But it's cheap to collect, it correlates with both money and speed, and it
+    moves early."</p>
+    <p><em>Transition:</em> "So where does the data actually go?"</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 11 · BACKENDS ══ -->
+<section class="slide slide--figure" data-title="Two surfaces, four backends" data-chapter="wire it up" data-mark="640">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>where the telemetry goes</div>
+    <h2>One wire, and four reasonable places to point it.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/architecture.svg" alt="Architecture: VS Code and the Copilot CLI export OTLP to one of four backends — local Tempo, Azure with a local collector, an Azure Container Apps collector, or Grafana Cloud." /></div>
+  </div>
+  <script type="text/notes">
+    <p>Fast. This slide exists so the next one makes sense.</p>
+    <p>"A: docker compose up. Free, offline, done in two minutes — that's where you start tonight."</p>
+    <p>"B and C put a collector in the path. That buys redaction, fan-out and buffering. Remember
+    <em>redaction</em> — it's the punchline of a slide near the end."</p>
+    <p>"D is Grafana Cloud direct: nothing to run, free tier, but no collector means no scrubbing."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 12 · INTERACTIVE 2 -->
+<section class="slide slide--interactive" data-title="▶ Pipeline builder (live)" data-chapter="wire it up" data-mark="700">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 2</div>
+    <h2>Build your pipeline. Take the config. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="pipeline"></div>
+  </div>
+  <script type="text/notes">
+    <p><strong>Live figure.</strong> Ask the room: "who's an Azure shop? who's Grafana Cloud? who just
+    wants it on their laptop?" — then click <em>their</em> answer.</p>
+    <p>Start on <strong>A</strong>. "Local. Two lines of settings, one docker compose. Nothing leaves
+    the machine."</p>
+    <p>Click <strong>C</strong>. "Now a collector appears in the diagram, the endpoint becomes public,
+    and a bearer token shows up in the config. Look at the last tab — <em>Collector · scrub</em>."</p>
+    <p>Click <strong>D</strong>. "Nothing to run. But notice: no collector tab. Nothing is scrubbing
+    anything. Hold that."</p>
+    <p>Point at the <em>Fleet · managed-settings.json</em> tab: "this is the supported rollout path since
+    July. It didn't exist a month ago."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 13 · TWO AXES ══ -->
+<section class="slide slide--figure" data-title="Surface ≠ agent (the over-count)" data-chapter="wire it up" data-mark="800" data-cut="1">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>the gotcha that will bite you</div>
+    <h2>service.name is not “where I was sitting”.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/surface-vs-agent.svg" alt="Surface versus agent grid: a CLI session started inside VS Code emits spans under two different service names." /></div>
+  </div>
+  <script type="text/notes">
+    <p>Insider knowledge — this is the slide people photograph.</p>
+    <p>"Start a CLI session from inside VS Code and you get spans under <em>both</em> names: the
+    extension wrapper as copilot-chat, the native spans as github-copilot. Filter on service.name alone
+    and you've counted one session twice."</p>
+    <p>"So slice on two axes: <em>surface</em> is which runtime emitted it, <em>agent</em> is what was
+    running inside it."</p>
+    <p>Callback: "and this is why you leave OTEL_SERVICE_NAME unset. Set it fleet-wide and every surface
+    collapses into one name — the selector stops working and you can never take it back retroactively."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 14 · DASHBOARD ═ -->
+<section class="slide" data-title="The dashboard" data-chapter="see it" data-mark="855">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>fifteen minutes after you start</div>
+    <h2>This is what falls out.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="board">
+      <div class="board__shot">
+        <img src="assets/img/dashboard-all-trim.png" alt="Grafana dashboard showing Copilot prompt-cache hits and misses, tokens, models and tool calls across both surfaces." />
+      </div>
+      <div class="board__legend">
+        <div class="board__row"><i class="is-otel"></i><div>
+          <b>One dropdown at the top</b>
+          <span>Copilot surface: <code>All</code> / <code>VS Code</code> / <code>Copilot CLI</code>. Every panel below re-queries.</span>
+        </div></div>
+        <div class="board__row"><i class="is-hit"></i><div>
+          <b>Cache read tokens</b>
+          <span>Prefix reused. Cheap, and roughly three times faster to first token.</span>
+        </div></div>
+        <div class="board__row"><i class="is-miss"></i><div>
+          <b>Cache creation tokens</b>
+          <span>Prefix rebuilt from scratch. This is the line you are trying to flatten.</span>
+        </div></div>
+        <div class="board__row"><i class="is-vscode"></i><div>
+          <b>Calls and p50 by model</b>
+          <span>Which model actually served you, and how long it took — per surface.</span>
+        </div></div>
+        <div class="board__row"><i class="is-cli"></i><div>
+          <b>Top tools, recent calls</b>
+          <span>Every span links straight into the Tempo trace view. Click through to the raw attributes.</span>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>Let it breathe for three seconds before you say anything. The picture does the work.</p>
+    <p>"Cache hit versus miss over time. Tokens in and out. Calls and p50 by model. Top tools. Recent calls."</p>
+    <p>"Nothing here is bespoke. It's a Grafana dashboard over a Tempo data source — the JSON is in the
+    repo, import it into whatever Grafana you already have."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 15 · COMPARE ═══ -->
+<section class="slide" data-title="VS Code vs CLI, side by side" data-chapter="see it" data-mark="915">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>one board, one dropdown</div>
+    <h2>The same questions, per surface.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="shot-row">
+      <div class="shot">
+        <img src="assets/img/dashboard-vscode-top.png" alt="Dashboard filtered to the VS Code surface: 17 LLM calls, 10 cache reads, 7 cache creations, 13 tool calls." />
+        <div class="cap"><b class="hl-vscode">VS Code</b> · service.name = copilot-chat</div>
+      </div>
+      <div class="shot">
+        <img src="assets/img/dashboard-cli-top.png" alt="Dashboard filtered to the Copilot CLI surface: 13 LLM calls, 9 cache reads, 4 cache creations, 9 tool calls." />
+        <div class="cap"><b class="hl-cli">Copilot CLI</b> · service.name = github-copilot</div>
+      </div>
+    </div>
+    <div class="callout info" style="margin-top:22px">
+      <span class="t">why this comparison is worth having</span>
+      Agent sessions and foreground chat have <strong>completely different shapes</strong> — turn length,
+      tool-call volume, how fast they burn the context window. Averaged together, both look wrong.
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>"Same panels, one variable. Because these two workloads behave nothing alike."</p>
+    <p>"Agent sessions run long, call a lot of tools, and hit compaction. Chat is short and bursty.
+    If you average them you get a number that describes neither."</p>
+    <p><em>Transition:</em> "Which brings us to the most useful chart in the whole repo."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 16 · INTERACTIVE 3 -->
+<section class="slide slide--interactive" data-title="▶ Why the cache missed (live)" data-chapter="see it" data-mark="975">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 3</div>
+    <h2>Four ways to destroy your hit rate. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="timeline"></div>
+  </div>
+  <script type="text/notes">
+    <p><strong>Live figure.</strong> Start with everything off: "one cold miss, then green all the way.
+    That's the ceiling, and it's reachable."</p>
+    <p>Flip <em>timestamp in the system prompt</em> first — it's the showstopper. "Every turn is a miss.
+    One volatile token at the front. This is a real bug I have seen in real prompt templates, and you
+    cannot feel it — you can only see it."</p>
+    <p>Turn it off. Flip <em>tool inventory reorders</em>: "MCP servers registering in a race. Same tools,
+    different order, different prefix."</p>
+    <p>Flip <em>compaction</em> and point at the diamonds: "those are span <em>events</em> —
+    session.compaction_complete. Copilot is telling you it rewrote the prefix. Overlay them on the miss
+    chart and you get cause next to effect. That is the single most useful correlation in the repo."</p>
+    <p><em>Ask the room:</em> "which of these is in your prompt right now?"</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 17 · INTERACTIVE 4 -->
+<section class="slide slide--interactive" data-title="▶ What a miss costs (live)" data-chapter="what it's worth" data-mark="1075">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 4</div>
+    <h2>Now multiply it by your team. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="economics"></div>
+  </div>
+  <script type="text/notes">
+    <p><strong>Live figure.</strong> Start on the <em>solo dev</em> preset: "on your own, a bad hit rate
+    is an annoyance. Real, but survivable."</p>
+    <p>Click <em>40-dev team</em>, then <em>unstable prefix</em>. "Same team, one drifting system prompt.
+    Watch the middle number."</p>
+    <p>Click <em>after tuning</em>. "Same team, same work, prefix pinned. That delta is one afternoon of
+    prompt hygiene — and you can only justify the afternoon if you can <em>show</em> the number."</p>
+    <p>Be honest about the model: "these are calibrated from a real span, not invented, but the multipliers
+    are a model. The point isn't the exact figure — it's that the figure exists at all, and it's yours to
+    measure instead of guess."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 18 · COST ══════ -->
+<section class="slide" data-title="Cost, and the attribute the docs got wrong" data-chapter="what it's worth" data-mark="1180">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>field note</div>
+    <h2>Cost is on the span now — you don’t have to infer it.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2-wide-left top">
+      <div>
+        <table class="data tight">
+          <tr><th>attribute</th><th>what it gives you</th></tr>
+          <tr><td class="mono">github.copilot.nano_aiu</td><td>AI units × 10⁻⁹ — divide by 1e9 for the credits figure the CLI prints</td></tr>
+          <tr><td class="mono">github.copilot.cost</td><td>Request cost as reported by the service</td></tr>
+          <tr><td class="mono">github.copilot.server_duration</td><td>Server-side ms, versus the span’s wall clock</td></tr>
+          <tr><td class="mono">gen_ai.response.time_to_first_chunk</td><td>TTFT in seconds, streaming</td></tr>
+          <tr><td class="mono">github.copilot.turn_count</td><td>LLM round trips in the session</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="callout">
+          <span class="t">the docs say aiu · the wire says nano_aiu</span>
+          Verified against <strong>Copilot CLI 1.0.76</strong>: a run the CLI reported as
+          <strong>“AI Credits 20.5”</strong> emitted
+          <span class="mono hl-otel">nano_aiu = 20546625000</span>.
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div class="lbl">the small win</div>
+          <p>Grafana unit <span class="mono">si:nAIU</span> — an SI nano prefix on a custom AIU unit —
+            rescales <span class="mono">21758500000</span> to <strong class="hl-hit">21.8 AIU</strong>
+            with no transformation at all.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>Short, and it buys enormous credibility. This is the "I actually ran this" slide.</p>
+    <p>"I went looking for the documented attribute. It isn't what ships. The docs say <em>aiu</em>; the
+    wire says <em>nano_aiu</em>, and it's off by a factor of a billion — which is a fun bug to find on a
+    cost dashboard."</p>
+    <p>"Two ways to know that: read a changelog, or look at the bytes. Only one of them is reliable."</p>
+    <p>Mention the file exporter: <span class="mono">COPILOT_OTEL_FILE_EXPORTER_PATH</span> writes every
+    signal to JSON lines — no backend needed. Fastest way to see what <em>your</em> version emits.</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 19 · PRIVACY ═══ -->
+<section class="slide slide--figure" data-title="“Off” is not “anonymous”" data-chapter="the fine print" data-mark="1260">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>the slide i would want someone to show me</div>
+    <h2>Content capture off ≠ anonymous.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/privacy-what-still-ships.svg" alt="With content capture off, Copilot still ships a pseudonymous user id, tool and MCP inventory, skill names, custom agent names, and repository metadata." /></div>
+  </div>
+  <script type="text/notes">
+    <p><strong>Slow down. This is the ethical core of the talk.</strong></p>
+    <p>"captureContent: false does exactly what it says — your prompts, your code, your tool results stay
+    home. That part is real."</p>
+    <p>"But I put a collector in front and read the bytes. Still shipping, by default: a <em>stable
+    pseudonymous user id</em> on every span. Your full tool and MCP inventory. Every skill installed
+    locally, by name. Your custom agent names. Repo, branch, commit."</p>
+    <p>"For a backend you own, that's useful — that's per-repo slicing. For a shared or third-party
+    backend, that's a per-developer activity log you didn't mean to build."</p>
+    <p>Callback to demo 2: "<em>this</em> is why the collector hop matters. Four lines and the id is gone
+    before it leaves the building. Ship the dashboard, don't ship the surveillance."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 20 · ROLLOUT ═══ -->
+<section class="slide slide--figure" data-title="Rolling it out to a fleet" data-chapter="the fine print" data-mark="1330">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>from your laptop to everyone’s</div>
+    <h2>The rollout path stopped being a hack.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/rollout-managed-settings.svg" alt="Managed Copilot settings: three delivery channels feeding a telemetry policy block, and the precedence chain." /></div>
+  </div>
+  <script type="text/notes">
+    <p>Two points, then move.</p>
+    <p>"Until July the answer was 'push environment variables with Intune and hope'. Now there's a
+    supported telemetry block — enabled, endpoint, headers, and <em>lockCaptureContent</em> so nobody can
+    quietly switch prompts back on."</p>
+    <p>"One trap: don't set serviceName fleet-wide. It collapses every surface into one name and your
+    selector dies. Use resourceAttributes for team tagging instead."</p>
+    <p><em>If running late, this is the slide to cut to 15 seconds.</em></p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 21 · MONDAY ════ -->
+<section class="slide" data-title="Monday morning" data-chapter="monday" data-mark="1385">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>what to actually do</div>
+    <h2>Monday morning, in order.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <div>
+          <h3>Twenty minutes: see your own data</h3>
+          <p><span class="mono">docker compose up -d</span>, paste four settings, use Copilot normally for
+            an hour, open <span class="mono">localhost:3001</span>. Nothing leaves your laptop. No cloud
+            account, no approval, no meeting.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <div>
+          <h3>One afternoon: find your worst prefix</h3>
+          <p>Sort by <span class="mono">cache_creation.input_tokens</span>. Look for a repeating high value —
+            that’s your volatile token. Overlay the <span class="mono">session.*</span> events to see whether
+            it’s compaction or something you wrote.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <div>
+          <h3>Then, and only then, talk about a fleet</h3>
+          <p>Put a collector in the path, drop <span class="mono">enduser.pseudo.id</span>, and roll it out
+            with managed settings — with a baseline you can point at, and an answer ready for
+            “are you watching me?”</p>
+        </div>
+      </div>
+    </div>
+    <div class="callout good" style="margin-top:24px">
+      <span class="t">the order matters</span>
+      Every failed observability rollout I’ve seen started at step 3. <strong>Earn the fleet with a number
+      you already have.</strong>
+    </div>
+  </div>
+  <script type="text/notes">
+    <p>Concrete, small, and personal-first. Say the twenty minutes out loud — it defuses "we'd need a project".</p>
+    <p>"Step three is where these things die. Do not start there. Show up with a chart of your own machine
+    and the conversation is completely different."</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 22 · FIELD NOTES -->
+<section class="slide" data-title="Field notes (things that will waste your evening)" data-chapter="monday" data-mark="1440" data-cut="1">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>bonus · things that cost me an evening</div>
+    <h2>Six traps, pre-sprung.</h2>
+  </div>
+  <div class="slide-body">
+    <table class="data tight">
+      <tr><th style="width:34%">trap</th><th>what happens · what to do</th></tr>
+      <tr><td>Traces-only pipeline</td><td>Copilot emits <strong>metrics and logs</strong> too. No <span class="mono">metrics:</span> pipeline in your collector and they’re silently dropped. Tempo can’t store metrics at all.</td></tr>
+      <tr><td>Protocol mismatch</td><td>The CLI defaults to <span class="mono">http/json</span>, VS Code to <span class="mono">http/protobuf</span>. Grafana Cloud’s gateway wants protobuf — set it explicitly.</td></tr>
+      <tr><td class="mono">OTEL_SERVICE_NAME</td><td>Set it and both surfaces collapse into one name. Leave it alone.</td></tr>
+      <tr><td>Managed headers</td><td>Delivered to the <strong>Chat extension exporter only</strong>, never the agent host — deliberately, to keep tokens out of subprocesses. An in-network collector side-steps it.</td></tr>
+      <tr><td>Workspace settings</td><td>Use <strong>User</strong> settings. A committed workspace setting points your teammates’ telemetry at your endpoint.</td></tr>
+      <tr><td>Reload</td><td>The agent host reads config at start-up. Changed a setting and see nothing? Reload the window before you debug anything else.</td></tr>
+    </table>
+  </div>
+  <script type="text/notes">
+    <p><strong>CUT THIS SLIDE if the timer is past 24:00.</strong> It's a gift, not a beat — and it works
+    just as well as a photo people take on the way out.</p>
+    <p>If you do keep it, don't read the table. Pick two: the metrics pipeline (because it fails silently)
+    and the workspace-settings one (because it's the only one that hurts someone else).</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 23 · CLOSE ═════ -->
+<section class="slide slide--statement" data-title="Close: stop guessing" data-chapter="monday" data-mark="1470">
+  <div class="eyebrow"><i class="dot"></i>one thing to take home</div>
+  <h2>We let the tool that writes<br>our code be the one thing<br>we <span class="underline-see">never measure</span>.</h2>
+  <p class="kicker">It has been telling us the whole time — tokens, cost, latency, every cache miss and the
+    reason for it. <strong>Four settings and a docker compose.</strong> Then it stops being a feeling and
+    starts being a number.</p>
+  <script type="text/notes">
+    <p>Slow. Pause after "never measure". Do not rush into the URL slide.</p>
+    <p>Final line, land it clean: <em>"Ask it for a dashboard about itself. It'll help you build it."</em></p>
+    <p>Then advance and take questions.</p>
+  </script>
+</section>
+
+<!-- ══════════════════════════════════════════════════ 24 · RESOURCES ═ -->
+<section class="slide" data-title="Take it with you / Q&amp;A" data-chapter="monday" data-mark="1500">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>everything is open source</div>
+    <h2>Take it with you.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2 top">
+      <div>
+        <div class="card accent-otel">
+          <div class="lbl">the repo</div>
+          <h3 class="mono" style="font-size:25px;line-height:1.3">github.com/webmaxru/<br>copilot-opentelemetry</h3>
+          <p style="margin-top:12px">Docker Compose for the local stack, both collector configs, Azure
+            provisioning scripts, and the two dashboards — TraceQL for Tempo, KQL for Azure Monitor.
+            MIT licensed.</p>
+          <div class="kv">copilot-opentelemetry.isainative.dev</div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="lbl">worth reading next</div>
+          <table class="data tight" style="margin-top:4px">
+            <tr><td>OTel GenAI semantic conventions</td><td class="mono" style="font-size:12px">opentelemetry.io</td></tr>
+            <tr><td>Monitor agent usage with OpenTelemetry</td><td class="mono" style="font-size:12px">VS Code docs</td></tr>
+            <tr><td>Copilot CLI — OpenTelemetry monitoring</td><td class="mono" style="font-size:12px">docs.github.com</td></tr>
+            <tr><td>Enterprise-managed OTel export</td><td class="mono" style="font-size:12px">github.blog changelog</td></tr>
+          </table>
+        </div>
+        <div class="pills" style="margin-top:18px">
+          <span class="pill hit">docker compose up -d</span>
+          <span class="pill otel">4 settings</span>
+          <span class="pill vscode">copilot-chat</span>
+          <span class="pill cli">github-copilot</span>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:26px;font-size:20px;color:var(--ink)">
+      Questions — and I’d genuinely like to hear what your hit rate turns out to be.
+    </p>
+  </div>
+  <script type="text/notes">
+    <p>Leave this up for the whole Q&amp;A.</p>
+    <p><strong>Likely questions, short answers:</strong></p>
+    <p><em>“Does GitHub see this?”</em> No. This is your endpoint. It's a separate pipe from GitHub's own
+    product telemetry.</p>
+    <p><em>“Overhead?”</em> Batched OTLP export off the hot path. Not measurable in normal use.</p>
+    <p><em>“Can I get this per developer for management?”</em> You <em>can</em> — enduser.pseudo.id is right
+    there. I'd push back hard: measure prompt health, not people. That's what the scrub processor is for.</p>
+    <p><em>“What about Visual Studio / the cloud agent?”</em> Not today. Slide 6 was the honest map.</p>
+    <p><em>“Does it work with Datadog / Honeycomb / Jaeger?”</em> It's OTLP. Yes.</p>
+  </script>
+</section>
+
+</div><!-- /stage -->
+</div><!-- /deck -->
+
+<script src="assets/js/figures.js"></script>
+<script src="assets/js/deck.js"></script>
+</body>
+</html>

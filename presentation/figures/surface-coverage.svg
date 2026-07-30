@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 480" width="1120" height="480" role="img"
+     aria-label="Which Copilot surfaces can export OpenTelemetry to your own backend, as of July 2026.">
+  <title>The honest coverage map — July 2026</title>
+  <desc>VS Code Copilot Chat, the GitHub Copilot CLI, the Copilot SDK, the desktop Copilot app, Claude via Copilot,
+        and JetBrains can export OpenTelemetry to your own backend. The Visual Studio extension and the cloud coding
+        agent cannot.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase}
+      .n{font-size:14.5px;font-weight:600;fill:#eef3fb}
+      .s{font-size:11.5px;fill:#5f6b7f}
+      .row{fill:#ffffff;fill-opacity:.02}
+    </style>
+  </defs>
+  <rect width="1120" height="480" fill="#0a0e1a"/>
+
+  <text class="m lbl" x="40" y="34" fill="#73bf69">✓ exports otel to your backend today</text>
+  <text class="m lbl" x="700" y="34" fill="#e5534b">✗ not yet</text>
+
+  <!-- YES column -->
+  <g transform="translate(40,48)">
+    <rect width="624" height="392" rx="13" fill="#ffffff" fill-opacity=".022" stroke="#73bf69" stroke-opacity=".26"/>
+
+    <g transform="translate(20,22)">
+      <rect class="row" width="584" height="56" rx="9"/>
+      <circle cx="9" cy="28" r="4" fill="#4c8dff"/>
+      <text class="d n" x="20" y="26">VS Code Copilot Chat</text>
+      <text class="m s" x="20" y="45">github.copilot.chat.otel.* · OTEL_* · managed settings</text>
+      <text class="m" x="564" y="34" font-size="12" fill="#4c8dff" text-anchor="end">copilot-chat</text>
+    </g>
+
+    <g transform="translate(20,80)">
+      <rect class="row" width="584" height="56" rx="9"/>
+      <circle cx="9" cy="28" r="4" fill="#a06bff"/>
+      <text class="d n" x="20" y="26">GitHub Copilot CLI</text>
+      <text class="m s" x="20" y="45">OTEL_* env vars · COPILOT_OTEL_ENABLED=true</text>
+      <text class="m" x="564" y="34" font-size="12" fill="#a06bff" text-anchor="end">github-copilot</text>
+    </g>
+
+    <g transform="translate(20,138)">
+      <rect class="row" width="584" height="56" rx="9"/>
+      <circle cx="9" cy="28" r="4" fill="#a06bff" fill-opacity=".6"/>
+      <text class="d n" x="20" y="26">Copilot app <tspan class="m s">(desktop)</tspan></text>
+      <text class="m s" x="20" y="45">its own policy, but built on the CLI runtime — verified</text>
+      <text class="m" x="564" y="34" font-size="12" fill="#a06bff" text-anchor="end">github-copilot</text>
+    </g>
+
+    <g transform="translate(20,196)">
+      <rect class="row" width="584" height="56" rx="9"/>
+      <circle cx="9" cy="28" r="4" fill="#73bf69"/>
+      <text class="d n" x="20" y="26">Copilot SDK <tspan class="m s">Node · Python · Go · .NET · Java · Rust</tspan></text>
+      <text class="m s" x="20" y="45">TelemetryConfig — for the agents you build yourself</text>
+      <text class="m s" x="564" y="34" text-anchor="end">configurable</text>
+    </g>
+
+    <g transform="translate(20,254)">
+      <rect class="row" width="584" height="56" rx="9"/>
+      <circle cx="9" cy="28" r="4" fill="#ffffff" fill-opacity=".3"/>
+      <text class="d n" x="20" y="26">Claude agent via Copilot</text>
+      <text class="m s" x="20" y="45">extension-emitted spans; claude-code when telemetry is forwarded</text>
+      <text class="m s" x="564" y="34" text-anchor="end">claude-code</text>
+    </g>
+
+    <g transform="translate(20,312)">
+      <rect class="row" width="584" height="56" rx="9"/>
+      <circle cx="9" cy="28" r="4" fill="#ff9830"/>
+      <text class="d n" x="20" y="26">JetBrains plugins <tspan class="m s" fill="#ff9830">new · July 2026</tspan></text>
+      <text class="m s" x="20" y="45">Settings → Tools → GitHub Copilot → Chat → OpenTelemetry</text>
+      <text class="m s" x="564" y="34" text-anchor="end" fill="#ff9830">name unverified</text>
+    </g>
+  </g>
+
+  <!-- NO column -->
+  <g transform="translate(688,48)">
+    <rect width="392" height="392" rx="13" fill="#ffffff" fill-opacity=".018" stroke="#ffffff" stroke-opacity=".08"/>
+
+    <g transform="translate(20,22)">
+      <rect class="row" width="352" height="56" rx="9"/>
+      <text class="d n" x="18" y="26" fill="#94a1b6">Visual Studio extension</text>
+      <text class="m s" x="18" y="45">no export path today</text>
+    </g>
+
+    <g transform="translate(20,86)">
+      <rect class="row" width="352" height="72" rx="9"/>
+      <text class="d n" x="18" y="26" fill="#94a1b6">Cloud coding agent</text>
+      <text class="m s" x="18" y="45">runs server-side — the client only</text>
+      <text class="m s" x="18" y="62">emits session counters</text>
+    </g>
+
+    <g transform="translate(20,196)">
+      <rect width="352" height="176" rx="10" fill="#f97316" fill-opacity=".06" stroke="#f97316" stroke-opacity=".26"/>
+      <text class="m lbl" x="18" y="28" fill="#f97316">say this out loud</text>
+      <text class="m" x="18" y="56" font-size="12.5" fill="#94a1b6">“All of Copilot is observable”</text>
+      <text class="m" x="18" y="78" font-size="12.5" fill="#eef3fb">is not true, and the gap</text>
+      <text class="m" x="18" y="100" font-size="12.5" fill="#eef3fb">matters when you promise</text>
+      <text class="m" x="18" y="122" font-size="12.5" fill="#eef3fb">a dashboard to a VP.</text>
+      <text class="m" x="18" y="152" font-size="11.5" fill="#5f6b7f">Two surfaces cover most of the</text>
+      <text class="m" x="18" y="168" font-size="11.5" fill="#5f6b7f">day, and that is enough to start.</text>
+    </g>
+  </g>
+</svg>
