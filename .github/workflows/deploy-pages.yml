@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'presentation/**'
       - 'src/**'
       - 'build.mjs'
       - 'package.json'
@@ -38,6 +39,10 @@ jobs:
         env:
           APPINSIGHTS_CONNECTION_STRING: ${{ vars.APPINSIGHTS_CONNECTION_STRING }}
         run: npm run build
+      - name: Stage the slide deck into the site
+        run: |
+          rm -rf docs/presentation
+          cp -r presentation docs/presentation
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

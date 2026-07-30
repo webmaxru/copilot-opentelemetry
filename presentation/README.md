@@ -4,6 +4,9 @@
 
 **25 minutes · developer audience · 4 live demos · everything runs offline**
 
+**Watch it online:** <https://copilot-opentelemetry.isainative.dev/presentation/> ·
+interactive figures at <https://copilot-opentelemetry.isainative.dev/presentation/interactive/>
+
 ---
 
 ## Abstract
@@ -28,6 +31,7 @@ own prompt-cache hit rate in about twenty minutes, on your laptop, without askin
 | Path | What it is |
 | --- | --- |
 | `slides.html` | The deck. 24 slides, self-contained, opens straight from disk. |
+| `index.html` | Redirect to `slides.html`, so `/presentation/` works when the folder is served. |
 | `talk-track.md` | Word-for-word script with timing marks, demo click-paths, cut lines and Q&A prep. |
 | `interactive/index.html` | All four interactive figures on one scrollable page. |
 | `interactive/figure.html?f=…` | One figure, full-window — for demoing or sharing on its own. |
