@@ -31,13 +31,14 @@ processors:
     send_batch_size: 512
 
   # ---------------------------------------------------------------------------
-  # STRICT profile. Option C is a SHARED endpoint fed by a whole fleet, so the
-  # collector is the last place to scrub before data leaves the developer's machine.
+  # STRICT profile. Option C is a SHARED endpoint fed by a whole fleet. The raw
+  # OTLP payload reaches this Azure-hosted collector over TLS; this processor
+  # minimizes it before Application Insights stores it.
   #
-  # 1. Identifiers Copilot emits by DEFAULT (NOT gated behind content capture):
+  # 1. Identifiers and work metadata that are not gated behind content capture:
   #      enduser.pseudo.id             pseudonymous per-developer id (CLI)
-  #      github.copilot.context.*      installed skill / custom-agent inventory (CLI)
-  #      gen_ai.tool.definitions       tool + MCP server inventory (observed without capture)
+  #      github.copilot.context.*      legacy skill / custom-agent inventory (CLI)
+  #      github.copilot.tool.parameters.skill_name
   #      github.copilot.git.*          repo remote URL, branch, commit (VS Code)
   #      copilot_chat.repo.*           legacy dual-emitted equivalents of the above
   # 2. Belt-and-braces: strip content-capture payloads even if a developer turns
@@ -51,6 +52,8 @@ processors:
       - key: github.copilot.context.skills
         action: delete
       - key: github.copilot.context.custom_agent_names
+        action: delete
+      - key: github.copilot.tool.parameters.skill_name
         action: delete
       - key: github.copilot.git.repository
         action: delete
@@ -86,11 +89,27 @@ processors:
       - key: github.copilot.tool.parameters.mcp_server_name
         action: delete
 
+  # The attributes processor handles span/log attributes, not attributes nested
+  # on span events. Current CLI lifecycle events can include skill names/paths
+  # and a content-capture-only compaction message, so scrub those separately.
+  transform/scrub-events:
+    error_mode: ignore
+    trace_statements:
+      - context: spanevent
+        statements:
+          - delete_key(attributes, "github.copilot.skill.name")
+          - delete_key(attributes, "github.copilot.skill.path")
+          - delete_key(attributes, "github.copilot.skill.plugin_name")
+          - delete_key(attributes, "github.copilot.skill.plugin_version")
+          - delete_key(attributes, "github.copilot.message")
+
 exporters:
   azuremonitor:
     connection_string: ${env:APPLICATIONINSIGHTS_CONNECTION_STRING}
     maxbatchsize: 100
     maxbatchinterval: 10s
+    # Required for the truncation/compaction panels in Application Insights.
+    spaneventsenabled: true
   debug:
     verbosity: normal
 
@@ -99,7 +118,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [attributes/scrub, batch]
+      processors: [attributes/scrub, transform/scrub-events, batch]
       exporters: [azuremonitor, debug]
     # Copilot emits GenAI metrics too — without this pipeline they are silently discarded.
     metrics:

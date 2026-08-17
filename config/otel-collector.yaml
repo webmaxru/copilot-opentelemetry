@@ -48,6 +48,8 @@ exporters:
     connection_string: ${env:APPLICATIONINSIGHTS_CONNECTION_STRING}
     maxbatchsize: 100
     maxbatchinterval: 10s
+    # Non-exception Copilot lifecycle events are dropped unless this is enabled.
+    spaneventsenabled: true
   # Handy while wiring things up: prints a one-line summary of each batch to collector logs.
   debug:
     verbosity: normal

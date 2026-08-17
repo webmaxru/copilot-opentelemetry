@@ -40,28 +40,41 @@
   "panels": [
     { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100, "title": "Summary — surface: $surface", "type": "row" },
     {
-      "title": "Total LLM Calls", "type": "stat", "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 }, "id": 1,
+      "title": "Total LLM Calls", "type": "stat", "gridPos": { "h": 4, "w": 5, "x": 0, "y": 1 }, "id": 1,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
       "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"chat\" && resource.service.name =~ \"$surface\" } | count_over_time()", "refId": "A" }],
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } },
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["sum"] } }
     },
     {
-      "title": "Cache Read Tokens (Hits)", "type": "stat", "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 }, "id": 2,
+      "title": "Cache Hits (calls)", "description": "LLM calls with cache-read tokens greater than zero.", "type": "stat", "gridPos": { "h": 4, "w": 5, "x": 5, "y": 1 }, "id": 2,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
       "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.usage.cache_read.input_tokens > 0 && resource.service.name =~ \"$surface\" } | count_over_time()", "refId": "A" }],
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } } },
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["sum"] } }
     },
     {
-      "title": "Cache Creation Tokens (Misses)", "type": "stat", "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 }, "id": 3,
+      "title": "Cache Misses (calls)", "description": "LLM calls with cache-creation tokens greater than zero.", "type": "stat", "gridPos": { "h": 4, "w": 5, "x": 10, "y": 1 }, "id": 3,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
       "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.usage.cache_creation.input_tokens > 0 && resource.service.name =~ \"$surface\" } | count_over_time()", "refId": "A" }],
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "orange", "value": null }] } } },
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["sum"] } }
     },
     {
-      "title": "Tool Calls", "type": "stat", "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 }, "id": 4,
+      "title": "Prompt Cache Token Hit Rate", "description": "Cache-read token volume divided by cache-read plus cache-creation token volume over the selected time range.", "type": "stat", "gridPos": { "h": 4, "w": 5, "x": 15, "y": 1 }, "id": 20,
+      "datasource": { "type": "tempo", "uid": "${datasource}" },
+      "targets": [
+        { "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"chat\" && resource.service.name =~ \"$surface\" } | sum_over_time(span.gen_ai.usage.cache_read.input_tokens)", "refId": "A", "hide": true },
+        { "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"chat\" && resource.service.name =~ \"$surface\" } | sum_over_time(span.gen_ai.usage.cache_creation.input_tokens)", "refId": "B", "hide": true },
+        { "datasource": { "type": "__expr__", "uid": "__expr__" }, "type": "reduce", "expression": "A", "reducer": "sum", "refId": "Hits", "hide": true },
+        { "datasource": { "type": "__expr__", "uid": "__expr__" }, "type": "reduce", "expression": "B", "reducer": "sum", "refId": "Misses", "hide": true },
+        { "datasource": { "type": "__expr__", "uid": "__expr__" }, "type": "math", "expression": "($Hits / ($Hits + $Misses)) * 100", "refId": "Rate" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 1, "mappings": [{ "type": "special", "options": { "match": "null", "result": { "text": "No cache data", "color": "gray" } } }, { "type": "special", "options": { "match": "nan", "result": { "text": "No cache data", "color": "gray" } } }], "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "orange", "value": null }, { "color": "green", "value": 80 }] } } },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "title": "Tool Calls", "type": "stat", "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 }, "id": 4,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
       "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"execute_tool\" && resource.service.name =~ \"$surface\" } | count_over_time()", "refId": "A" }],
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "purple", "value": null }] } } },
@@ -77,7 +90,7 @@
       "options": { "legend": { "displayMode": "table", "calcs": ["sum"], "placement": "bottom" } }
     },
     {
-      "title": "Cache Hit vs Miss Over Time", "description": "Green = cache reads (savings), Orange = cache creations (new entries).",
+      "title": "Cache Hit vs Miss Calls Over Time", "description": "Green = calls with cache reads. Orange = calls with cache creation.",
       "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 }, "id": 6,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
       "targets": [
@@ -95,37 +108,49 @@
     },
     { "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }, "id": 106, "title": "Cost, AI credits & agents", "type": "row" },
     {
-      "title": "AI Credits (AIU)",
-      "description": "Sum of `github.copilot.nano_aiu` on **invoke_agent** spans — one per turn, so it doesn't double-count the `chat` spans that carry the same value. The attribute is in *nano* AI-units; the `si:nAIU` unit rescales it to the credits figure the CLI prints when a session ends. Emitted by the CLI today (docs still call it `github.copilot.aiu` — the wire says `nano_aiu`).",
+      "title": "AI Credits (current AIU)",
+      "description": "Sum of the documented `github.copilot.aiu` value on `chat` spans. Each provider call is counted once.",
       "type": "stat", "gridPos": { "h": 8, "w": 4, "x": 0, "y": 15 }, "id": 13,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
-      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.nano_aiu)", "refId": "A" }],
+      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"chat\" && span.github.copilot.aiu != nil && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.aiu)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "yellow", "value": null }] } } },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["sum"] } }
+    },
+    {
+      "title": "AI Credits (legacy nAIU)",
+      "description": "Compatibility panel for older CLI builds that emitted `github.copilot.nano_aiu` on `invoke_agent`. The SI nano unit rescales it to AIU.",
+      "type": "stat", "gridPos": { "h": 8, "w": 4, "x": 4, "y": 15 }, "id": 19,
+      "datasource": { "type": "tempo", "uid": "${datasource}" },
+      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && span.github.copilot.aiu = nil && span.github.copilot.nano_aiu != nil && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.nano_aiu)", "refId": "A" }],
       "fieldConfig": { "defaults": { "unit": "si:nAIU", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "yellow", "value": null }] } } },
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["sum"] } }
     },
     {
       "title": "Request Cost",
-      "description": "Sum of `github.copilot.cost` on invoke_agent spans — the cost figure the service reports per turn. GitHub doesn't document the unit, so treat it as a *relative* indicator and use AI Credits for the number that matches billing.",
-      "type": "stat", "gridPos": { "h": 8, "w": 4, "x": 4, "y": 15 }, "id": 14,
+      "description": "Sum of `github.copilot.cost` on `chat` spans. GitHub doesn't document the unit, so treat it as a relative indicator.",
+      "type": "stat", "gridPos": { "h": 8, "w": 4, "x": 8, "y": 15 }, "id": 14,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
-      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.cost)", "refId": "A" }],
+      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"chat\" && span.github.copilot.cost != nil && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.cost)", "refId": "A" }],
       "fieldConfig": { "defaults": { "unit": "none", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "yellow", "value": null }] } } },
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["sum"] } }
     },
     {
-      "title": "AI Credits by Surface", "description": "Where the credits are actually being spent — VS Code vs the CLI.",
-      "type": "timeseries", "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 }, "id": 15,
+      "title": "AI Credits by Surface (current AIU)", "description": "Documented `github.copilot.aiu` split by emitting runtime. Older nano-AIU builds remain visible in the legacy total panel.",
+      "type": "timeseries", "gridPos": { "h": 8, "w": 6, "x": 12, "y": 15 }, "id": 15,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
-      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.nano_aiu) by (resource.service.name)", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "si:nAIU", "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
+      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"chat\" && span.github.copilot.aiu != nil && resource.service.name =~ \"$surface\" } | sum_over_time(span.github.copilot.aiu) by (resource.service.name)", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "none", "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "options": { "legend": { "displayMode": "table", "calcs": ["sum"], "placement": "bottom" } }
     },
     {
       "title": "Turns by Agent",
-      "description": "The **second axis**. `resource.service.name` says which runtime emitted the span; `gen_ai.agent.id` (CLI) / `gen_ai.agent.name` (VS Code) says what was running inside it. A Copilot CLI session launched from inside VS Code shows up under both surfaces — this panel is how you tell them apart. Only `invoke_agent` spans carry the agent attributes, which is why the surface selector, not an agent selector, filters the rest of the board.",
-      "type": "timeseries", "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 }, "id": 16,
+      "description": "The **second axis**. Current spans group by `gen_ai.agent.name`; the second query falls back to `gen_ai.agent.id` only when name is absent. This covers VS Code and older CLI data without double-counting current CLI spans.",
+      "type": "timeseries", "gridPos": { "h": 8, "w": 6, "x": 18, "y": 15 }, "id": 16,
       "datasource": { "type": "tempo", "uid": "${datasource}" },
-      "targets": [{ "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && resource.service.name =~ \"$surface\" } | count_over_time() by (span.gen_ai.agent.id)", "refId": "A" }],
+      "targets": [
+        { "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && span.gen_ai.agent.name != nil && resource.service.name =~ \"$surface\" } | count_over_time() by (span.gen_ai.agent.name)", "refId": "name" },
+        { "datasource": { "type": "tempo", "uid": "${datasource}" }, "queryType": "traceql", "query": "{ span.gen_ai.operation.name = \"invoke_agent\" && span.gen_ai.agent.name = nil && span.gen_ai.agent.id != nil && resource.service.name =~ \"$surface\" } | count_over_time() by (span.gen_ai.agent.id)", "refId": "legacy-id" }
+      ],
       "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } } },
       "options": { "legend": { "displayMode": "table", "calcs": ["sum"], "placement": "bottom" } }
     },
@@ -199,7 +224,7 @@
       "title": "Surfaces, selector & TraceQL", "type": "text", "gridPos": { "h": 11, "w": 24, "x": 0, "y": 62 }, "id": 12,
       "options": {
         "mode": "markdown",
-        "content": "## GitHub Copilot surfaces (July 2026)\n\n| Surface | `resource.service.name` | Enable via |\n|---------|-------------------------|-----------|\n| VS Code Copilot Chat | `copilot-chat` | `github.copilot.chat.otel.*` settings, `OTEL_*` env vars, or enterprise managed settings |\n| GitHub Copilot CLI / Copilot app | `github-copilot` | `OTEL_*` env vars (`COPILOT_OTEL_ENABLED=true`) |\n| Claude Code subprocess | `claude-code` | forwarded `CLAUDE_CODE_ENABLE_TELEMETRY` |\n| JetBrains *(new July 2026)* | *not yet verified* | Settings → Tools → GitHub Copilot → Chat |\n\nThe **Copilot surface** selector maps to a regex on `resource.service.name`. Careful: a **Copilot CLI session started from inside VS Code** emits the extension wrapper span as `copilot-chat` *and* the SDK spans as `github-copilot` — so surface alone over-counts. The **Turns by Agent** panel is the second axis (`gen_ai.agent.id` / `gen_ai.agent.name`).\n\n## Explore queries (Explore → Tempo)\n\n| Query | Description |\n|-------|-------------|\n| `{ resource.service.name =~ \"copilot-chat\\|github-copilot\" }` | All Copilot surfaces |\n| `{ } \\| count_over_time() by (resource.service.name)` | **Discover** unknown surfaces (e.g. JetBrains) |\n| `{ span.gen_ai.operation.name = \"invoke_agent\" } \\| sum_over_time(span.github.copilot.nano_aiu)` | AI credits (÷ 1e9) |\n| `{ event:name =~ \".*session.*\" } \\| count_over_time() by (event:name)` | Truncation / compaction events |\n| `{ span.gen_ai.operation.name = \"chat\" } \\| count_over_time() by (span.gen_ai.request.model)` | Calls per model |\n\nEvery surface follows the OTel GenAI semantic conventions, so the same `gen_ai.*` attributes work across all of them. Note that Tempo stores **traces only** — Copilot's OTLP *metrics* need a Prometheus-compatible backend (or the Application Insights path in options B/C)."
+        "content": "## GitHub Copilot surfaces (August 2026)\n\n| Surface | `resource.service.name` | Enable via |\n|---------|-------------------------|-----------|\n| VS Code Copilot Chat | `copilot-chat` | `github.copilot.chat.otel.*` settings, `OTEL_*` env vars, or enterprise managed settings |\n| GitHub Copilot CLI / Copilot app | `github-copilot` | `OTEL_*` env vars (`COPILOT_OTEL_ENABLED=true`) |\n| Claude Code subprocess | `claude-code` | forwarded `CLAUDE_CODE_ENABLE_TELEMETRY` |\n| JetBrains | *not yet verified* | Settings → Tools → GitHub Copilot → Chat |\n\nThe **Copilot surface** selector maps to a regex on `resource.service.name`. A **Copilot CLI session started from inside VS Code** emits the extension wrapper span as `copilot-chat` and native spans as `github-copilot`; use **Turns by Agent** as the second axis.\n\n## Explore queries (Explore → Tempo)\n\n| Query | Description |\n|-------|-------------|\n| `{ resource.service.name =~ \"copilot-chat\\|github-copilot\" }` | All dashboarded Copilot runtimes |\n| `{ } \\| count_over_time() by (resource.service.name)` | Discover an undocumented runtime name |\n| `{ span.gen_ai.operation.name = \"chat\" } \\| sum_over_time(span.github.copilot.aiu)` | Current AI credits |\n| `{ span.gen_ai.operation.name = \"invoke_agent\" } \\| sum_over_time(span.github.copilot.nano_aiu)` | Legacy nano-AIU credits |\n| `{ event:name =~ \".*session.*\" } \\| count_over_time() by (event:name)` | Truncation / compaction events |\n| `{ span.gen_ai.operation.name = \"chat\" } \\| count_over_time() by (span.gen_ai.request.model)` | Calls per model |\n\nTempo stores **traces only**. Copilot's OTLP metrics need a metrics backend, such as Application Insights in options B/C."
       }
     }
   ],
@@ -210,5 +235,5 @@
   "timezone": "browser",
   "title": "GitHub Copilot OTel — VS Code + CLI (Tempo / TraceQL)",
   "uid": "copilot-otel-tempo",
-  "version": 2
+  "version": 3
 }

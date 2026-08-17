@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Option D: deploy the OTel Collector to Azure Container Apps (Consumption plan, scale-to-zero)
+  Option C: deploy the OTel Collector to Azure Container Apps (Consumption plan, scale-to-zero)
   as a public, token-protected OTLP endpoint that forwards Copilot traces to Application Insights.
 
   Nothing runs on the developer's machine — VS Code points straight at the ACA endpoint.
@@ -111,7 +111,7 @@ $endpoint = "https://$fqdn"
 
 Step "Writing $outFile (git-ignored)"
 @"
-# Option D - Azure Container Apps collector. LOCAL ONLY - do not commit.
+# Option C - Azure Container Apps collector. LOCAL ONLY - do not commit.
 OTLP_ENDPOINT=$endpoint
 INGEST_TOKEN=$IngestToken
 

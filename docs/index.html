@@ -261,7 +261,7 @@
       <a href="#monitor">What you see</a>
       <a href="#backends">Backends</a>
       <a href="#privacy">Privacy</a>
-      <a href="/presentation/slides.html">Talk</a>
+      <a href="/presentation/v2/">Talk</a>
     </div>
     <a class="nav-cta" href="https://github.com/webmaxru/copilot-opentelemetry">GitHub ↗</a>
   </div>
@@ -322,7 +322,7 @@
       <div class="selnote"><b>Copilot surface</b> selector →
         <span class="mono">All (VS Code + CLI)</span> · <span class="mono">VS Code</span> · <span class="mono">Copilot CLI</span>.
         Keep <span class="mono">OTEL_SERVICE_NAME</span> unset so each surface keeps its own name.</div>
-      <div class="selnote" style="margin-top:12px"><b>Two axes, not one</b> (updated July 2026) →
+      <div class="selnote" style="margin-top:12px"><b>Two axes, not one</b> (updated August 2026) →
         <b>surface</b> is <span class="mono">resource.service.name</span>
         (<span class="mono">copilot-chat</span> · <span class="mono">github-copilot</span> · <span class="mono">claude-code</span>),
         <b>agent</b> is <span class="mono">gen_ai.agent.name</span> / <span class="mono">gen_ai.agent.id</span>.
@@ -370,7 +370,7 @@
       </div>
       <div class="grid3">
         <div class="mcard"><div class="lbl">cache</div><h3>Prompt‑cache efficiency</h3><p>Hit vs miss over time, per model, per surface.</p><div class="kv">gen_ai.usage.cache_read<br>gen_ai.usage.cache_creation</div></div>
-        <div class="mcard"><div class="lbl">cost</div><h3>Tokens &amp; cost</h3><p>Input/output/cached tokens, plus real per‑turn cost and AI credits.</p><div class="kv">gen_ai.usage.*_tokens<br>github.copilot.nano_aiu ÷ 1e9</div></div>
+        <div class="mcard"><div class="lbl">cost</div><h3>Tokens &amp; cost</h3><p>Input/output/cached tokens, plus per-call cost and AI credits.</p><div class="kv">gen_ai.usage.*_tokens<br>github.copilot.aiu<br>legacy: nano_aiu ÷ 1e9</div></div>
         <div class="mcard"><div class="lbl">latency</div><h3>Speed</h3><p>Duration and time‑to‑first‑token, sliced by model.</p><div class="kv">gen_ai.client.operation.duration<br>time_to_first_chunk</div></div>
         <div class="mcard"><div class="lbl">tools</div><h3>Tool usage &amp; reliability</h3><p>Which tools run, how often, how slow, how often they fail.</p><div class="kv">execute_tool · gen_ai.tool.name</div></div>
         <div class="mcard"><div class="lbl">outcomes</div><h3>Adoption &amp; impact</h3><p>Edits accepted, lines shipped, edit survival, thumbs, PRs.</p><div class="kv">edit.acceptance · lines_of_code<br>edit.survival · pull_request</div></div>
@@ -385,10 +385,10 @@
       <div class="sec-head">
         <span class="eyebrow">See it</span>
         <h2>One board. Flip the selector.</h2>
-        <p>Cache hit/miss, calls by surface, models, tools, and a raw trace table — filtered to
-          <b>VS Code</b>, <b>the CLI</b>, or both. The July 2026 update adds <b>AI credits and cost</b>,
-          a <b>Turns by Agent</b> breakdown, and a <b>truncation/compaction</b> panel that puts the
-          <em>cause</em> of a cache miss right next to the effect.</p>
+        <p>Cache calls and token volume, models, tools, and raw traces — filtered to <b>VS Code</b>,
+          <b>the CLI</b>, or both. The August 2026 compatibility release adds the actual
+          <b>prompt-cache token hit rate</b>, current/legacy AI-credit handling, corrected agent grouping,
+          and exported <b>truncation/compaction</b> events.</p>
       </div>
       <div class="shotframe">
         <div class="shotbar"><span class="b"></span><span class="b"></span><span class="b"></span>
@@ -412,10 +412,10 @@
       <div class="grid4">
         <div class="bcard"><div class="tag">A</div><h3>Local</h3><p>Docker: Grafana Tempo + Grafana. Offline, private.</p><div class="cost">Free · local</div></div>
         <div class="bcard"><div class="tag">B</div><h3>Azure · local collector</h3><p>Collector fans out to Tempo <em>and</em> Application Insights.</p><div class="cost">Azure metered</div></div>
-        <div class="bcard"><div class="tag">C</div><h3>Azure Container Apps</h3><p>Cloud collector, scale‑to‑zero. Nothing runs locally.</p><div class="cost">Scale-to-zero</div></div>
+        <div class="bcard"><div class="tag">C</div><h3>Azure Container Apps</h3><p>Cloud collector, scale‑to‑zero. Scrubs before App Insights storage.</p><div class="cost">Scale-to-zero</div></div>
         <div class="bcard"><div class="tag">D</div><h3>Grafana Cloud</h3><p>Point straight at managed Tempo. Nothing to run.</p><div class="cost">Free tier</div></div>
       </div>
-      <div class="selnote" style="margin-top:18px"><b>Rolling it out to a team</b> (new, July 2026) →
+      <div class="selnote" style="margin-top:18px"><b>Rolling it out to a team</b> (updated August 2026) →
         GitHub now ships a supported <b>enterprise managed settings</b> path with a dedicated
         <span class="mono">telemetry</span> block — <span class="mono">enabled</span>,
         <span class="mono">endpoint</span>, <span class="mono">protocol</span>,
@@ -424,7 +424,8 @@
         a server-managed <span class="mono">managed-settings.json</span>, or a file on disk — no more pushing raw
         env vars. One warning: don't set <span class="mono">telemetry.serviceName</span> fleet-wide, or every
         surface collapses into one name and the surface selector stops working. The repo has ready-to-paste
-        samples per backend.</div>
+        samples per backend. The current support matrix documents the telemetry key for
+        <b>VS Code, Copilot CLI, and JetBrains</b>, not the desktop app or cloud coding agent.</div>
     </div>
   </section>
 
@@ -436,10 +437,10 @@
         <p>The question that decides whether you can roll this out — answered plainly.</p>
       </div>
       <div class="plist">
-        <div class="pitem"><span class="ic">→</span><p><b>Telemetry goes to <em>your</em> endpoint, not GitHub.</b> Enabling OTLP export routes data to the collector or backend you configure. It doesn't send anything extra to GitHub or Microsoft.</p></div>
+        <div class="pitem"><span class="ic">→</span><p><b>Telemetry goes to the endpoint you configure.</b> OTLP export does not create a second GitHub-controlled copy. The operator of your chosen backend still receives it — your team for local/Azure, or Grafana Labs for Grafana Cloud.</p></div>
         <div class="pitem"><span class="ic">→</span><p><b>No prompts, code, or responses by default.</b> Content capture is off — the GenAI conventions' deliberate opt‑in. You get metadata: model, <code>token counts</code>, durations, tool names, cache hits/misses.</p></div>
-        <div class="pitem"><span class="ic">→</span><p><b>"Content off" isn't "anonymous" — and we checked.</b> With capture disabled, the CLI still ships <code>enduser.pseudo.id</code> (a stable pseudonymous user id), your tool/MCP inventory, and installed skill names; VS Code attaches repo URL / branch / commit / org. Fine for a backend you own — worth scrubbing for one you share.</p></div>
-        <div class="pitem"><span class="ic">→</span><p><b>The collector is your redaction control point.</b> Both collector configs ship a working <code>attributes/scrub</code> processor that <code>delete</code>s those identifiers before anything leaves — lenient for your own tenant, strict for a shared one.</p></div>
+        <div class="pitem"><span class="ic">→</span><p><b>"Content off" isn't "anonymous."</b> Prompts, responses, system instructions, tool schemas/arguments/results are opt-in. Metadata still includes a CLI pseudonymous id when available, agent identity, invoked skill names/paths, tool metadata, and VS Code repo/branch/commit/org.</p></div>
+        <div class="pitem"><span class="ic">→</span><p><b>The collector is your minimization control point.</b> Option B drops the pseudonymous id locally before cloud export. Option C strips span, content, repository, and skill-event attributes at the Azure collector before Application Insights stores them; the raw OTLP request has already left the device.</p></div>
         <div class="pitem"><span class="ic">→</span><p><b>You choose where data lives.</b> On your laptop, in your Azure region (pick an EEA region for residency), or Grafana Cloud's SaaS. Content capture, if you ever turn it on, only against a backend you own.</p></div>
       </div>
     </div>
@@ -495,7 +496,10 @@ http://localhost:3001  <span class="tok-c"># → GitHub Copilot OTel — VS Code
     </div>
     <div class="foot-links">
       <a href="https://github.com/webmaxru/copilot-opentelemetry">Repository</a>
-      <a href="/presentation/slides.html">Talk: Copilot, Traced</a>
+      <a href="/presentation/v2/">Talk: Copilot, Traced</a>
+      <a href="/presentation/v2/presenter.html">Presenter notes</a>
+      <a href="https://github.com/webmaxru/copilot-opentelemetry/releases">Releases</a>
+      <a href="https://github.com/webmaxru/copilot-opentelemetry/blob/main/CHANGELOG.md">Changelog</a>
       <a href="https://code.visualstudio.com/docs/agents/guides/monitoring-agents">VS Code OTel</a>
       <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring">CLI OTel</a>
     </div>
