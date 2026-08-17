@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 520" width="1120" height="520" role="img"
+     aria-label="How the prompt cache works: a stable prefix is read back, a changed prefix is rebuilt from the first changed token onward.">
+  <title>Prompt cache: prefix in, prefix out</title>
+  <desc>Two prompts side by side. Both share system prompt, tool definitions and history. In the top case the prefix
+        is byte-identical and is read from cache. In the bottom case one token near the front changed, so everything
+        after it is rebuilt.</desc>
+  <defs>
+    <style>
+      .d{font-family:Sora,system-ui,sans-serif}
+      .m{font-family:"DM Mono",ui-monospace,Consolas,monospace}
+      .lbl{font-size:11px;letter-spacing:.2em;text-transform:uppercase;fill:#5f6b7f}
+      .seg{font-size:12px;fill:#0a0e1a}
+      .cap{font-size:13px;fill:#94a1b6}
+      .big{font-size:17px;fill:#eef3fb;font-weight:600}
+      .tiny{font-size:11.5px;fill:#5f6b7f}
+    </style>
+  </defs>
+  <rect width="1120" height="520" fill="#0a0e1a"/>
+
+  <text class="m lbl" x="40" y="36">the prompt is a sequence · the cache keys on its prefix</text>
+
+  <!-- ============ case 1: stable ============ -->
+  <g transform="translate(40,64)">
+    <text class="d big" x="0" y="16">Prefix unchanged</text>
+    <text class="m tiny" x="180" y="16">the model reads it back — cheaper, faster</text>
+
+    <g transform="translate(0,32)">
+      <rect x="0"   y="0" width="236" height="46" rx="7" fill="#73bf69" fill-opacity=".85"/>
+      <rect x="240" y="0" width="222" height="46" rx="7" fill="#73bf69" fill-opacity=".72"/>
+      <rect x="466" y="0" width="330" height="46" rx="7" fill="#73bf69" fill-opacity=".58"/>
+      <rect x="800" y="0" width="240" height="46" rx="7" fill="#0f1626" stroke="#ffffff" stroke-opacity=".14"/>
+
+      <text class="m seg" x="16"  y="28">system prompt</text>
+      <text class="m seg" x="256" y="28">tool definitions</text>
+      <text class="m seg" x="482" y="28">conversation history</text>
+      <text class="m" x="816" y="28" font-size="12" fill="#eef3fb">your new message</text>
+    </g>
+
+    <path d="M0 92 H 796" stroke="#73bf69" stroke-width="2" stroke-dasharray="4 4" opacity=".55"/>
+    <text class="m" x="0" y="112" font-size="12" fill="#73bf69">cache_read.input_tokens = 21,504</text>
+    <text class="m tiny" x="330" y="112">everything left of the line was already there</text>
+    <text class="m" x="1000" y="112" font-size="12" fill="#73bf69" text-anchor="end">HIT</text>
+  </g>
+
+  <!-- divider -->
+  <path d="M40 240 H 1080" stroke="#ffffff" stroke-opacity=".07"/>
+
+  <!-- ============ case 2: one token moved ============ -->
+  <g transform="translate(40,272)">
+    <text class="d big" x="0" y="16">One token near the front changed</text>
+    <text class="m tiny" x="330" y="16">a timestamp, a reordered tool, a compacted history…</text>
+
+    <g transform="translate(0,32)">
+      <rect x="0"   y="0" width="150" height="46" rx="7" fill="#73bf69" fill-opacity=".8"/>
+      <rect x="154" y="0" width="82"  height="46" rx="7" fill="#ff9830" fill-opacity=".95"/>
+      <rect x="240" y="0" width="222" height="46" rx="7" fill="#ff9830" fill-opacity=".62"/>
+      <rect x="466" y="0" width="330" height="46" rx="7" fill="#ff9830" fill-opacity=".5"/>
+      <rect x="800" y="0" width="240" height="46" rx="7" fill="#0f1626" stroke="#ffffff" stroke-opacity=".14"/>
+
+      <text class="m seg" x="16"  y="28">system prompt</text>
+      <text class="m" x="164" y="28" font-size="11" fill="#0a0e1a">17:42:09</text>
+      <text class="m seg" x="256" y="28">tool definitions</text>
+      <text class="m seg" x="482" y="28">conversation history</text>
+      <text class="m" x="816" y="28" font-size="12" fill="#eef3fb">your new message</text>
+    </g>
+
+    <path d="M154 86 V 100 H 796" stroke="#ff9830" stroke-width="2" opacity=".7"/>
+    <circle cx="154" cy="86" r="3.5" fill="#ff9830"/>
+    <text class="m" x="0" y="122" font-size="12" fill="#ff9830">cache_creation.input_tokens = 21,504</text>
+    <text class="m tiny" x="330" y="122">one byte moved — everything after it is new again</text>
+    <text class="m" x="1000" y="122" font-size="12" fill="#ff9830" text-anchor="end">MISS</text>
+  </g>
+
+  <text class="m" x="40" y="500" font-size="12.5" fill="#94a1b6">
+    Cache HIT = <tspan fill="#73bf69">cache_read.input_tokens &gt; 0</tspan>
+    <tspan fill="#5f6b7f">   ·   </tspan>
+    Cache MISS = <tspan fill="#ff9830">cache_creation.input_tokens &gt; 0</tspan>
+    <tspan fill="#5f6b7f">   ·   both 0 = no cache in play</tspan>
+  </text>
+</svg>

@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Copilot, Traced - 20-minute edition</title>
+<meta name="description" content="A 20-minute developer talk on GitHub Copilot OpenTelemetry, prompt-cache hit rate, backends, and privacy." />
+<meta name="author" content="Maxim Salnikov" />
+<meta name="color-scheme" content="dark" />
+<link rel="canonical" href="https://copilot-opentelemetry.isainative.dev/presentation/v2/" />
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/deck.css" />
+</head>
+<body>
+
+<div class="deck">
+<div class="stage">
+
+<!-- 01 -->
+<section class="slide slide--title" data-title="Copilot, Traced" data-chapter="the blind spot" data-mark="0">
+  <div class="eyebrow"><i class="dot"></i>opentelemetry for github copilot</div>
+  <h1>Copilot,<br><span class="underline-see">Traced</span>.</h1>
+  <p class="sub">Your AI pair programmer is a distributed system. <em>Measure it like one.</em></p>
+  <div class="byline">
+    <span class="who">20 minutes</span><i class="sep"></i>
+    <span>3 interactive demos</span><i class="sep"></i>
+    <span>offline-first</span>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="slide slide--statement" data-title="Three questions" data-chapter="the blind spot" data-mark="40">
+  <div class="eyebrow"><i class="dot"></i>about your last copilot turn</div>
+  <h2>Three questions most teams<br>cannot answer yet.</h2>
+  <div class="slide-body top compact-top">
+    <div class="cols c3">
+      <div class="card">
+        <div class="lbl">01</div>
+        <h3>How many tokens?</h3>
+        <p>The actual input, output, cache-read, and cache-creation counts.</p>
+      </div>
+      <div class="card">
+        <div class="lbl">02</div>
+        <h3>What did it cost?</h3>
+        <p>For that turn, from the span - not from a monthly aggregate.</p>
+      </div>
+      <div class="card">
+        <div class="lbl">03</div>
+        <h3>Was the prefix cached?</h3>
+        <p>Or did one volatile byte make the model process it again?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="slide" data-title="Treat it like a distributed system" data-chapter="the blind spot" data-mark="95">
+  <div class="slide-head">
+    <div class="eyebrow purple"><i class="dot"></i>the reframe</div>
+    <h2>Treat Copilot like the distributed system it is.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2 top">
+      <div class="card accent-hit">
+        <div class="lbl">a service you own</div>
+        <h3>Measured</h3>
+        <p>Requests, dependencies, retries, latency, errors, cache hit rate, and cost per operation.</p>
+        <div class="kv">trace &rarr; dashboard &rarr; decision</div>
+      </div>
+      <div class="card accent-miss">
+        <div class="lbl">your coding agent</div>
+        <h3>Usually judged by feel</h3>
+        <p>A planner calls models and tools, crosses networks, retries, compacts context, uses a cache, and creates a bill.</p>
+        <div class="kv">"it felt slower today"</div>
+      </div>
+    </div>
+    <div class="callout info" style="margin-top:26px">
+      <span class="t">the useful surprise</span>
+      Copilot already emits <strong>OTLP traces and metrics</strong> using OpenTelemetry GenAI conventions.
+    </div>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="slide" data-title="Two switches, one endpoint" data-chapter="switch it on" data-mark="165">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>the whole integration</div>
+    <h2>Two switches. One OTLP endpoint.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2 top">
+      <div>
+        <div class="code-cap">VS Code - user settings.json</div>
+        <pre class="code sm">{
+  <span class="k">"github.copilot.chat.otel.enabled"</span>: <span class="n">true</span>,
+  <span class="k">"github.copilot.chat.otel.exporterType"</span>: <span class="s">"otlp-http"</span>,
+  <span class="k">"github.copilot.chat.otel.otlpEndpoint"</span>: <span class="s">"http://localhost:4318"</span>,
+  <span class="k">"github.copilot.chat.otel.captureContent"</span>: <span class="n">false</span>
+}</pre>
+      </div>
+      <div>
+        <div class="code-cap">Copilot CLI - environment</div>
+        <pre class="code sm"><span class="f">setx</span> <span class="k">COPILOT_OTEL_ENABLED</span> <span class="s">"true"</span>
+<span class="f">setx</span> <span class="k">OTEL_EXPORTER_OTLP_ENDPOINT</span> <span class="s">"http://localhost:4318"</span>
+<span class="f">setx</span> <span class="k">OTEL_EXPORTER_OTLP_PROTOCOL</span> <span class="s">"http/protobuf"</span>
+
+<span class="c"># Leave OTEL_SERVICE_NAME unset.</span></pre>
+      </div>
+    </div>
+    <div class="callout good" style="margin-top:22px">
+      <span class="t">keep the defaults</span>
+      VS Code reports as <strong class="hl-vscode">copilot-chat</strong>; the CLI reports as
+      <strong class="hl-cli">github-copilot</strong>. Those names power the surface selector.
+    </div>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="slide" data-title="The honest coverage map" data-chapter="switch it on" data-mark="245">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>coverage as of 17 august 2026</div>
+    <h2>Coverage is wider - but it is not universal.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="coverage-grid">
+      <div class="card coverage-card accent-hit">
+        <div class="coverage-status yes">documented</div>
+        <h3>Strong paths</h3>
+        <p><strong>VS Code</strong> <code>copilot-chat</code></p>
+        <p><strong>Copilot CLI</strong> <code>github-copilot</code></p>
+        <p><strong>Copilot SDK</strong> configurable via <code>TelemetryConfig</code></p>
+      </div>
+      <div class="card coverage-card accent-otel">
+        <div class="coverage-status maybe">new or indirect</div>
+        <h3>Verify the name</h3>
+        <p><strong>JetBrains</strong> now has an OTel export panel; its service name is not documented.</p>
+        <p><strong>Copilot app</strong> uses the CLI runtime and has been observed as <code>github-copilot</code>.</p>
+      </div>
+      <div class="card coverage-card accent-miss">
+        <div class="coverage-status no">not a direct trace path</div>
+        <h3>Keep the claim narrow</h3>
+        <p><strong>Visual Studio</strong> has no documented customer export path.</p>
+        <p><strong>Cloud coding agent</strong> exposes client-side session/outcome metrics, not its server-side execution trace.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="slide" data-title="Anatomy of one turn" data-chapter="read the signal" data-mark="300">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>what comes off the wire</div>
+    <h2>One turn is a trace you already know how to read.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="trace-map">
+      <div class="trace-node trace-root">
+        <div class="trace-op">invoke_agent</div>
+        <h3>One user turn</h3>
+        <p>Agent identity, aggregate tokens, cost, AI units, and turn count.</p>
+      </div>
+      <div class="trace-rail" aria-hidden="true"></div>
+      <div class="trace-children">
+        <div class="trace-node trace-chat miss">
+          <div class="trace-op">chat</div>
+          <h3>Model call</h3>
+          <p>Model, input/output tokens, cache creation, time to first chunk.</p>
+        </div>
+        <div class="trace-node trace-tool">
+          <div class="trace-op">execute_tool</div>
+          <h3>Dependency call</h3>
+          <p>Tool name, duration, error, and optional content.</p>
+        </div>
+        <div class="trace-node trace-chat hit">
+          <div class="trace-op">chat</div>
+          <h3>Next model call</h3>
+          <p>Same prefix, cache read, lower latency.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="slide slide--interactive" data-title="Trace explorer" data-chapter="read the signal" data-mark="360">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 1</div>
+    <h2>Click a span. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="trace"></div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section class="slide slide--figure" data-title="How the prompt cache works" data-chapter="the headline metric" data-mark="475">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>the mental model</div>
+    <h2>A cache hit requires a stable prefix.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/cache-anatomy.svg" alt="A stable prompt prefix is read from cache; changing a token near the front forces the remaining prefix to be created again." /></div>
+  </div>
+</section>
+
+<!-- 09 -->
+<section class="slide" data-title="Why hit rate matters" data-chapter="the headline metric" data-mark="545">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>pick one number to watch first</div>
+    <h2>Cache hit rate is a leading indicator.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c3">
+      <div class="card accent-hit">
+        <div class="lbl">it reveals</div>
+        <h3>Prompt stability</h3>
+        <p>System instructions, tool order, and conversation history are staying stable between calls.</p>
+      </div>
+      <div class="card accent-otel">
+        <div class="lbl">it predicts</div>
+        <h3>Cost pressure</h3>
+        <p>More cache creation means more input is processed as fresh instead of reused.</p>
+      </div>
+      <div class="card accent-vscode">
+        <div class="lbl">it predicts</div>
+        <h3>Latency pressure</h3>
+        <p>Cache reads often reach the first streamed chunk faster than equivalent cold calls.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:26px">
+      <span class="t">the definitions</span>
+      <span class="mono">cache_read.input_tokens &gt; 0</span> = <strong class="hl-hit">hit</strong> &nbsp;&middot;&nbsp;
+      <span class="mono">cache_creation.input_tokens &gt; 0</span> = <strong class="hl-miss">miss</strong>.
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide slide--figure" data-title="Four backend choices" data-chapter="send it somewhere" data-mark="620">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>same wire, different destination</div>
+    <h2>Pick the operating model you already trust.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="figures/architecture.svg" alt="GitHub Copilot OpenTelemetry can go to local Tempo, Azure through a local collector, an Azure Container Apps collector, or Grafana Cloud." /></div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide slide--interactive" data-title="Pipeline builder" data-chapter="send it somewhere" data-mark="690">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 2</div>
+    <h2>Change the destination, not the signal. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="pipeline"></div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="The dashboard" data-chapter="make it useful" data-mark="795">
+  <div class="slide-head">
+    <div class="eyebrow"><i class="dot"></i>the result</div>
+    <h2>One dashboard, split by runtime.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="dashboard-focus">
+      <div class="dashboard-kpis">
+        <img src="assets/img/dashboard-kpis.png" alt="Grafana dashboard summary with the Copilot surface selector and large totals for model calls, cache reads, cache creation, and tool calls." />
+      </div>
+      <div class="dashboard-questions">
+        <div class="dashboard-question is-otel">
+          <span>01</span><b>Pick a runtime</b>
+          <p>All, VS Code, or Copilot CLI.</p>
+        </div>
+        <div class="dashboard-question is-hit">
+          <span>02</span><b>Check cache health</b>
+          <p>Read versus creation tokens over time.</p>
+        </div>
+        <div class="dashboard-question is-vscode">
+          <span>03</span><b>Find the slow model</b>
+          <p>Calls, p50, and time to first chunk.</p>
+        </div>
+        <div class="dashboard-question is-cli">
+          <span>04</span><b>Open the trace</b>
+          <p>Drill from a recent operation to raw spans.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide slide--interactive" data-title="Why the cache missed" data-chapter="make it useful" data-mark="875">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>demo 3</div>
+    <h2>Make an invisible regression visible. <span class="live-badge">live</span></h2>
+  </div>
+  <div class="slide-body">
+    <div class="fig-host" data-figure="timeline"></div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Privacy and cost truth" data-chapter="the guardrails" data-mark="990">
+  <div class="slide-head">
+    <div class="eyebrow amber"><i class="dot"></i>current documentation, not folklore</div>
+    <h2>Measure the system without collecting the conversation.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c3 top">
+      <div class="card accent-hit">
+        <div class="lbl">content capture off</div>
+        <h3>Conversation stays out</h3>
+        <p>Prompts, responses, system instructions, tool schemas, arguments, and results require explicit opt-in.</p>
+      </div>
+      <div class="card accent-vscode">
+        <div class="lbl">metadata still flows</div>
+        <h3>Enough to operate</h3>
+        <p>Model, token counts, cache counts, duration, cost/AI units, service, agent, and tool names.</p>
+      </div>
+      <div class="card accent-miss">
+        <div class="lbl">govern this too</div>
+        <h3>Identifiers remain</h3>
+        <p>The CLI can emit a pseudonymous user ID; repo, branch, commit, organization, agent, and skill metadata can identify work.</p>
+      </div>
+    </div>
+    <div class="callout good" style="margin-top:24px">
+      <span class="t">collector rule</span>
+      Keep content capture off, then remove identifiers and work metadata you do not need <strong>before</strong> a shared backend.
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Monday morning" data-chapter="put it to work" data-mark="1080">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>the smallest useful path</div>
+    <h2>Monday morning, in order.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <div>
+          <h3>See one machine</h3>
+          <p>Start option A, enable VS Code and the CLI, use Copilot normally, and open the local dashboard.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <div>
+          <h3>Find the expensive misses</h3>
+          <p>Sort by cache-creation tokens. Correlate spikes with truncation and compaction events.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <div>
+          <h3>Choose where the data should live</h3>
+          <p>Keep it local, keep it in your Azure tenant, or use Grafana Cloud - with a collector when you need minimization and fan-out.</p>
+        </div>
+      </div>
+    </div>
+    <div class="callout info" style="margin-top:24px">
+      <span class="t">the goal</span>
+      Replace "Copilot feels slow" with a trace, a cache hit rate, and a next action.
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide slide--statement" data-title="Stop guessing" data-chapter="put it to work" data-mark="1145">
+  <div class="eyebrow"><i class="dot"></i>one thing to take home</div>
+  <h2>The tool writing your code<br>should not be the one system<br>you <span class="underline-see">never measure</span>.</h2>
+  <p class="kicker">Tokens, latency, tools, cost, and every cache miss are already on the wire.
+    <strong>Point them somewhere useful.</strong></p>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Take it with you" data-chapter="put it to work" data-mark="1190">
+  <div class="slide-head">
+    <div class="eyebrow green"><i class="dot"></i>resources and q&amp;a</div>
+    <h2>Take it with you.</h2>
+  </div>
+  <div class="slide-body">
+    <div class="cols c2 top">
+      <div class="card accent-otel resource-card">
+        <div class="lbl">the working repository</div>
+        <h3 class="mono">github.com/webmaxru/<br>copilot-opentelemetry</h3>
+        <p>Four backend options, collector configs, dashboards, Azure scripts, and the source for this deck.</p>
+        <div class="kv">copilot-opentelemetry.isainative.dev</div>
+      </div>
+      <div class="card resource-card">
+        <div class="lbl">official references checked 17 aug 2026</div>
+        <table class="data tight source-table">
+          <tr><td><a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring">Copilot CLI OTel monitoring</a></td><td>GitHub Docs</td></tr>
+          <tr><td><a href="https://code.visualstudio.com/docs/agents/guides/monitoring-agents">Monitor agent usage</a></td><td>VS Code Docs</td></tr>
+          <tr><td><a href="https://docs.github.com/en/copilot/how-tos/copilot-sdk/observability/opentelemetry">Copilot SDK instrumentation</a></td><td>GitHub Docs</td></tr>
+          <tr><td><a href="https://github.blog/changelog/2026-07-27-github-copilot-for-jetbrains-adds-improvved-opentelemetry-configuration-and-model-management/">JetBrains OTel export</a></td><td>GitHub Changelog</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="presenter-links">
+      <span>Slides: <strong>.../presentation/v2/</strong></span>
+      <span>Notes: <strong>.../presentation/v2/presenter.html</strong></span>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script src="assets/js/figures.js"></script>
+<script src="assets/js/deck.js"></script>
+</body>
+</html>
