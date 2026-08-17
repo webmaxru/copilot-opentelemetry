@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Copilot, Traced - presenter view</title>
+<meta name="color-scheme" content="dark" />
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Karla:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/presenter.css" />
+</head>
+<body>
+<main class="presenter">
+  <header class="presenter-head">
+    <div>
+      <div class="brand"><i></i>copilot, traced <span>presenter</span></div>
+      <div class="connection" id="connection"><i></i><span>Waiting for audience window</span></div>
+    </div>
+    <div class="head-actions">
+      <button class="button primary" id="open-audience" type="button">Open audience window</button>
+      <button class="button" id="copy-audience" type="button">Copy audience URL</button>
+    </div>
+  </header>
+
+  <section class="share-safe" aria-label="Screen sharing guidance">
+    <strong>Share only the audience window.</strong>
+    <span>The audience page does not load this notes file, so notes cannot appear in the shared deck.</span>
+  </section>
+
+  <div class="presenter-grid">
+    <section class="current-panel panel">
+      <div class="panel-label"><span id="slide-number">01 / 17</span><span id="chapter">the blind spot</span></div>
+      <h1 id="current-title">Copilot, Traced</h1>
+      <div class="timing-row">
+        <div>
+          <span class="timing-label">planned arrival</span>
+          <strong id="planned-time">00:00</strong>
+        </div>
+        <div>
+          <span class="timing-label">time on slide</span>
+          <strong id="slide-duration">00:40</strong>
+        </div>
+      </div>
+      <div class="deck-progress"><i id="deck-progress"></i></div>
+    </section>
+
+    <aside class="timer-panel panel">
+      <div class="panel-label"><span>20-minute clock</span><span id="pace" class="pace">ready</span></div>
+      <div class="timer" id="timer">00:00</div>
+      <div class="remaining" id="remaining">20:00 remaining</div>
+      <div class="timer-actions">
+        <button class="button primary" id="timer-toggle" type="button">Start timer</button>
+        <button class="button" id="timer-reset" type="button">Reset</button>
+      </div>
+    </aside>
+
+    <section class="notes-panel panel">
+      <div class="panel-label"><span>speaker notes</span><span id="checked-on">checked 17 aug 2026</span></div>
+      <div class="notes" id="notes"></div>
+      <div class="cue" id="cue"></div>
+    </section>
+
+    <aside class="next-panel panel">
+      <div class="panel-label"><span>up next</span><span id="next-number">02</span></div>
+      <h2 id="next-title">Three questions</h2>
+      <div class="source-block">
+        <div class="panel-label"><span>sources for this slide</span></div>
+        <div id="sources" class="sources"></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="presenter-controls">
+    <button class="button nav" id="previous" type="button">&larr; Previous</button>
+    <div class="shortcut-hint">
+      <kbd>&larr;</kbd><kbd>&rarr;</kbd> slides
+      <span>&middot;</span>
+      <kbd>T</kbd> timer
+      <span>&middot;</span>
+      <kbd>Shift+T</kbd> reset
+      <span>&middot;</span>
+      <kbd>F</kbd> fullscreen
+    </div>
+    <button class="button primary nav" id="next" type="button">Next &rarr;</button>
+  </footer>
+
+  <div class="url-strip">
+    <span>Audience</span><a id="audience-url" href="index.html"></a>
+    <span>Presenter</span><a id="presenter-url" href="presenter.html"></a>
+  </div>
+</main>
+
+<script src="assets/js/notes.js"></script>
+<script src="assets/js/presenter.js"></script>
+</body>
+</html>
